@@ -159,7 +159,7 @@ class FireExtinguisher(object):
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
-        self.bl = self.parent.midpoint*Point(0,3)-self.half_size
+        self.bl = self.parent.midpoint*Point(0.3,3)-self.half_size
         self.middle = self.bl + self.half_size
         self.shape = self.parent.CreateShape(self.half_size,self.bl)
         self.angle = 0
