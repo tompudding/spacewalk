@@ -139,3 +139,5 @@ class GameView(ui.RootElement):
         bl = self.absolute.size*pos
         player = actors.Player(self.physics,bl,fire_extinguisher)
         self.players.append(player)
+        if len(self.players) == 1:
+            player.Select()

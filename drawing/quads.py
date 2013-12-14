@@ -160,6 +160,18 @@ class Shape(object):
             self.old_vertices = numpy.copy(self.vertex[0:self.num_points])
             for i in xrange(self.num_points):
                 self.vertex[i] = (0,0,0)
+
+    def GetCentre(self):
+        return (Point(self.vertex[0][0],self.vertex[0][1]) + Point(self.vertex[2][0],self.vertex[2][1]))/2
+
+    def Translate(self,amount):
+        if self.old_vertices != None:
+            vertices = self.old_vertices
+        else:
+            vertices = self.vertex
+        for i in xrange(4):
+            vertices[i][0] -= amount[0]
+            vertices[i][1] -= amount[1]
     
     def SetColour(self,colour):
         if self.deleted:

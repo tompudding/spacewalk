@@ -116,9 +116,38 @@ class DynamicBox(StaticBox):
             self.Destroy()
 
 class Player(DynamicBox):
-    texture_name = 'astronaut_body.png'
+    texture_name  = 'astronaut_body.png'
+    selected_name = 'selected.png'
     def __init__(self,physics,bl,fire_extinguisher):
-        self.subimage = globals.atlas.SubimageSprite(self.texture_name)
-        self.texture_coords = globals.atlas.TextureSpriteCoords(self.texture_name)
-        tr = bl + self.subimage.size
+        self.selected          = False
+        self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
+        self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
+        self.selected_subimage = globals.atlas.SubimageSprite(self.selected_name)
+        self.selected_texture_coords = globals.atlas.TextureSpriteCoords(self.selected_name)
+        tr                     = bl + self.subimage.size
         super(Player,self).__init__(physics,bl,tr,self.texture_coords)
+        
+    def InitPolygons(self,tc):
+        super(Player,self).InitPolygons(tc)
+        #The selected quad uses different tcs...
+        self.selected_quad = drawing.Quad(globals.quad_buffer,tc = self.selected_texture_coords)
+        if not self.selected:
+            self.selected_quad.Disable()
+
+    def PhysUpdate(self):
+        super(Player,self).PhysUpdate()
+        #Now update the position of the selected quad. No need to rotate it as it's a circle
+        centre = Point(*self.body.GetWorldPoint([0,0]))/self.physics.scale_factor
+        bl = centre - (self.selected_subimage.size/2)
+        tr = bl + self.selected_subimage.size
+        self.selected_quad.SetVertices(bl,tr,20)
+
+    def Select(self):
+        if not self.selected:
+            self.selected = True
+            self.selected_quad.Enable()
+
+    def Unselect(self):
+        if self.selected:
+            self.selected = False
+            self.selected_quad.Disable()
