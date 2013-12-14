@@ -99,7 +99,7 @@ class GameMode(Mode):
                                                 bl = pos,
                                                 tr = pos + obj.size,
                                                 tc = parent.atlas.TextureSpriteCoords(name)))
-        self.parent.AddPlayer(Point(0.45,0.35),True)
+        self.parent.AddPlayer(Point(0.45,0.25),True)
         self.parent.AddPlayer(Point(0.60,0.25))
 
     def MouseMotion(self,pos,rel):

@@ -184,16 +184,21 @@ class FireExtinguisher(object):
         #self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
 
     def PhysUpdate(self):
+        if self.squirting:
+            print 'fffff'
+            thrust = 0.1
+            vector = cmath.rect(thrust,self.angle)
+            self.parent.body.ApplyForce((vector.real,vector.imag),self.middle.to_vec())
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
             
     def Rotate(self,angle):
-        angle = angle%(math.pi*2)
-        if angle > self.min_angle and angle < self.max_angle:
+        self.angle = angle%(math.pi*2)
+        if self.angle > self.min_angle and self.angle < self.max_angle:
             return 
-        #print 'angle',angle
-        self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),angle)
+        #print 'self.angle',self.angle
+        self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),self.angle)
         self.SetPositions()
 
 class Player(DynamicBox):
