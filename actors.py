@@ -152,15 +152,36 @@ class PlayerArm(object):
 class FireExtinguisher(object):
     z_level = 12
     texture_name = 'fire_extinguisher_held.png'
+    min_angle = 1.5
+    max_angle = (math.pi*2)-min_angle
     def __init__(self,parent):
         self.parent = parent
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
-        self.bl = self.parent.midpoint*Point(0,1.8)
+        self.bl = self.parent.midpoint*Point(0,1.5)
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
+        self.middle = self.bl + self.half_size
         self.shape = self.parent.CreateShape(self.half_size,self.bl)
-        self.base_pos = self.bl + self.half_size*Point(0.3,0.05)
-        self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
+        self.angle = 0
+        self.SetPositions()
+        self.squirting = False
+
+    def Squirt(self):
+        self.squirting = True
+        print 'squirting'
+
+    def StopSquirting(self):
+        self.squirting = False
+        print 'stopped squirting'
+
+    def SetPositions(self):
+        bl = Point(*self.shape.vertices[0])
+        tr = Point(*self.shape.vertices[2])
+        size = tr - bl
+        self.base_pos = bl + (size*Point(0.4,0.3))
+        self.hose_pos = bl + (size*Point(1.0,0.8))
+        #self.base_pos = self.bl + self.half_size*Point(0.3,0.05)
+        #self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
 
     def PhysUpdate(self):
         for i,vertex in enumerate(self.shape.vertices):
@@ -168,7 +189,12 @@ class FireExtinguisher(object):
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
             
     def Rotate(self,angle):
+        angle = angle%(math.pi*2)
+        if angle > self.min_angle and angle < self.max_angle:
+            return 
+        #print 'angle',angle
         self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),angle)
+        self.SetPositions()
 
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
@@ -186,6 +212,7 @@ class Player(DynamicBox):
         self.selected          = False
         self.unset             = None
         self.fire_extinguisher = None
+        self.squirting         = False
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
         self.selected_subimage = globals.atlas.SubimageSprite(self.selected_name)
@@ -239,6 +266,7 @@ class Player(DynamicBox):
             arm.Update()
         if self.unset and globals.time >= self.unset[1]:
             self.ResetFilters()
+
         if self.fire_extinguisher:
             self.fire_extinguisher.PhysUpdate()
 
@@ -263,22 +291,39 @@ class Player(DynamicBox):
             self.selected_quad.Disable()
 
     def MouseMotion(self,pos,rel):
-        print pos
+        #print pos
+        #pass
+        if self.fire_extinguisher:
+            #print pos
+            phys_pos = pos*self.physics.scale_factor
+            centre = self.body.GetWorldPoint(self.fire_extinguisher.middle.to_vec())
+            diff = phys_pos - Point(centre[0],centre[1])
+            distance,angle = cmath.polar(complex(diff.x,diff.y))
+            angle = (angle - (math.pi/2) - self.GetAngle())%(math.pi*2)
+            self.fire_extinguisher.Rotate(angle)
+            self.arms[0].SetHand(self,self.fire_extinguisher.base_pos)
+            self.arms[1].SetHand(self,self.fire_extinguisher.hose_pos)
 
     def MouseButtonDown(self,pos,button):
-        if button == globals.left_button and self.IsGrabbed():
-            self.PreparePush()
+        if self.fire_extinguisher:
+            self.fire_extinguisher.Squirt()
+        else:
+            if button == globals.left_button and self.IsGrabbed():
+                self.PreparePush()
 
     def MouseButtonUp(self,pos,button):
-        if button == globals.left_button:
-            if self.IsGrabbed():
-                self.Push()
-            else:
-                obj = self.physics.GetObjectAtPoint(pos)
-                if obj and obj is not self:
-                    self.Grab(obj,pos)
-        elif button == globals.right_button:
-            self.Ungrab()
+        if self.fire_extinguisher:
+            self.fire_extinguisher.StopSquirting()
+        else:
+            if button == globals.left_button:
+                if self.IsGrabbed():
+                    self.Push()
+                else:
+                    obj = self.physics.GetObjectAtPoint(pos)
+                    if obj and obj is not self:
+                        self.Grab(obj,pos)
+            elif button == globals.right_button:
+                self.Ungrab()
 
     def Grab(self,obj,pos):
         #First we need to decide if we're close enough to grab it

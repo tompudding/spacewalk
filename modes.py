@@ -107,7 +107,7 @@ class GameMode(Mode):
             self.parent.selected_player.MouseMotion(pos,rel)
 
     def MouseButtonDown(self,pos,button):
-        print 'mouse button down',pos,button
+        #print 'mouse button down',pos,button
         if self.parent.selected_player != None:
             self.parent.selected_player.MouseButtonDown(pos,button)
 
