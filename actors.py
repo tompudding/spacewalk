@@ -159,9 +159,10 @@ class FireExtinguisher(object):
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
-        self.bl = self.parent.midpoint*Point(0.3,3)-self.half_size
+        self.bl = self.parent.midpoint*Point(0.3,2.4)-self.half_size
         self.middle = self.bl + self.half_size
         self.shape = self.parent.CreateShape(self.half_size,self.bl)
+        self.shapeI = self.parent.body.CreateShape(self.shape)
         self.angle = 0
         self.SetPositions()
         self.squirting = False
@@ -297,6 +298,9 @@ class Player(DynamicBox):
             self.selected = False
             self.selected_quad.Disable()
 
+    def throw_fire_extinguisher(self,pos):
+        print 'tfe'
+
     def MouseMotion(self,pos,rel):
         #print pos
         #pass
@@ -313,14 +317,18 @@ class Player(DynamicBox):
 
     def MouseButtonDown(self,pos,button):
         if self.fire_extinguisher:
-            self.fire_extinguisher.Squirt()
+            if button == globals.left_button:
+                self.fire_extinguisher.Squirt()
         else:
             if button == globals.left_button and self.IsGrabbed():
                 self.PreparePush()
 
     def MouseButtonUp(self,pos,button):
         if self.fire_extinguisher:
-            self.fire_extinguisher.StopSquirting()
+            if button == globals.left_button:
+                self.fire_extinguisher.StopSquirting()
+            elif button == globals.right_button:
+                self.throw_fire_extinguisher(pos)
         else:
             if button == globals.left_button:
                 if self.IsGrabbed():
