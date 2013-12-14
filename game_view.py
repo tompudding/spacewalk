@@ -67,6 +67,7 @@ class Physics(object):
         self.objects = []
     
     def AddObject(self,obj):
+        print 'object at',obj.bodydef.position
         self.objects.append(obj)
 
     def Step(self):
@@ -75,6 +76,23 @@ class Physics(object):
         
         for obj in self.objects:
             obj.PhysUpdate()
+
+    def GetObjectAtPoint(self,pos):
+        aabb = box2d.b2AABB()
+        phys_pos = pos*self.scale_factor
+
+        print pos,phys_pos
+        aabb.lowerBound.Set(phys_pos.x-0.1,phys_pos.y-0.1)
+        aabb.upperBound.Set(phys_pos.x+0.1,phys_pos.y+0.1)
+        (count,shapes) = self.world.Query(aabb,10)
+        print count
+        for shape in shapes:
+            trans = box2d.b2XForm()
+            trans.SetIdentity()
+            p = phys_pos - Point(*shape.GetBody().position)
+            if shape.TestPoint(trans,tuple(p)):
+                print shape
+                break
 
 class GameView(ui.RootElement):
     def __init__(self):
@@ -89,7 +107,7 @@ class GameView(ui.RootElement):
         self.players = []
         self.mode = modes.GameMode(self)
         self.paused = False
-        
+        self.selected_player = None
         self.StartMusic()
 
     def StartMusic(self):
@@ -141,3 +159,19 @@ class GameView(ui.RootElement):
         self.players.append(player)
         if len(self.players) == 1:
             player.Select()
+            self.selected_player = player
+
+    def MouseMotion(self,pos,rel,handled):
+        #print 'mouse',pos
+        #if self.selected_player != None:
+        #    self.selected_player.MouseMotion()
+        return super(GameView,self).MouseMotion(pos,rel,handled)
+
+    def MouseButtonDown(self,pos,button):
+        #print 'mouse button down',pos,button
+        return super(GameView,self).MouseButtonDown(pos,button)
+
+    def MouseButtonUp(self,pos,button):
+        #print 'mouse button up',pos,button
+        self.physics.GetObjectAtPoint(pos)
+        return super(GameView,self).MouseButtonUp(pos,button)

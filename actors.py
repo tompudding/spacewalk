@@ -20,6 +20,8 @@ class StaticBox(object):
         #Hardcode the dirt texture since right now all static things are dirt. I know I know.
         self.dead = False
         self.tc = tc
+        self.bl = bl
+        self.tr = tr
         if tc != None:
             self.InitPolygons(tc)
             self.visible = True
@@ -41,7 +43,11 @@ class StaticBox(object):
         self.shapeI = self.body.CreateShape(self.shape)
         self.child_joint = None
         self.parent_joint = None
+        self.ExtraShapes()
         self.PhysUpdate()
+
+    def ExtraShapes(self):
+        pass
 
     def Destroy(self):
         if self.static:
@@ -62,11 +68,17 @@ class StaticBox(object):
         #can't damage static stuff
         return
 
-    def CreateShape(self,midpoint):
+    def CreateShape(self,midpoint,pos = None):
         if self.dead:
             return
         shape = box2d.b2PolygonDef()
-        shape.SetAsBox(*midpoint)
+        if pos == None:
+            shape.SetAsBox(*midpoint)
+        else:
+            posv = box2d.b2Vec2()
+            posv[0] = pos[0]
+            posv[1] = pos[1]
+            shape.SetAsBox(midpoint[0],midpoint[1],posv,0)
         return shape
 
     def InitPolygons(self,tc):
@@ -126,10 +138,20 @@ class Player(DynamicBox):
         self.selected_texture_coords = globals.atlas.TextureSpriteCoords(self.selected_name)
         tr                     = bl + self.subimage.size
         super(Player,self).__init__(physics,bl,tr,self.texture_coords)
+
+    # def ExtraShapes(self):
+    #     #Players have arms
+    #     box_size = self.tr - self.bl
+    #     arm_bl = box_size*Point(0.8,0.5)*0.5*self.physics.scale_factor
+    #     arm_tr = arm_bl + box_size*Point(0.05,1)*0.5*self.physics.scale_factor
+    #     arm_midpoint = (arm_tr - arm_bl)
+    #     self.arm = self.CreateShape(arm_midpoint,arm_bl)
+    #     self.armI = self.body.CreateShape(self.arm)
         
     def InitPolygons(self,tc):
         super(Player,self).InitPolygons(tc)
         #The selected quad uses different tcs...
+        #self.arm_quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords('debris.png'))
         self.selected_quad = drawing.Quad(globals.quad_buffer,tc = self.selected_texture_coords)
         if not self.selected:
             self.selected_quad.Disable()
@@ -141,6 +163,10 @@ class Player(DynamicBox):
         bl = centre - (self.selected_subimage.size/2)
         tr = bl + self.selected_subimage.size
         self.selected_quad.SetVertices(bl,tr,20)
+
+       # for i,vertex in enumerate(self.arm.vertices):
+       #     screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
+       #     self.arm_quad.vertex[self.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,11)
 
     def Select(self):
         if not self.selected:
