@@ -158,8 +158,8 @@ class FireExtinguisher(object):
         self.parent = parent
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
-        self.bl = self.parent.midpoint*Point(0,1.5)
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
+        self.bl = self.parent.midpoint*Point(0,3)-self.half_size
         self.middle = self.bl + self.half_size
         self.shape = self.parent.CreateShape(self.half_size,self.bl)
         self.angle = 0
@@ -185,18 +185,20 @@ class FireExtinguisher(object):
 
     def PhysUpdate(self):
         if self.squirting:
-            print 'fffff'
-            thrust = 0.1
-            vector = cmath.rect(thrust,self.angle)
-            self.parent.body.ApplyForce((vector.real,vector.imag),self.middle.to_vec())
+            thrust = -0.5
+            direction = self.parent.body.angle + self.angle + (math.pi/2)
+            vector = cmath.rect(thrust,direction)
+            print (vector.real,vector.imag),self.middle,self.parent.body.position
+            print 'a',self.bl,self.half_size,self.angle
+            self.parent.body.ApplyForce((vector.real,vector.imag),self.parent.body.GetWorldPoint(self.middle.to_vec()))
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
             
     def Rotate(self,angle):
         self.angle = angle%(math.pi*2)
-        if self.angle > self.min_angle and self.angle < self.max_angle:
-            return 
+        #if self.angle > self.min_angle and self.angle < self.max_angle:
+        #    return 
         #print 'self.angle',self.angle
         self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),self.angle)
         self.SetPositions()
