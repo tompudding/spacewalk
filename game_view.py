@@ -165,7 +165,9 @@ class GameView(ui.RootElement):
 
     def AddPlayer(self,pos,fire_extinguisher = False):
         bl = self.absolute.size*pos
-        player = actors.Player(self.physics,bl,fire_extinguisher)
+        player = actors.Player(self.physics,bl)
+        if fire_extinguisher:
+            player.EquipFireExtinguisher()
         self.players.append(player)
         if len(self.players) == 1:
             player.Select()
@@ -179,7 +181,7 @@ class GameView(ui.RootElement):
         return super(GameView,self).MouseMotion(pos,rel,handled)
 
     def MouseButtonDown(self,pos,button):
-        print 'mouse button down',pos,button
+        #print 'mouse button down',pos,button
         self.mode.MouseButtonDown(pos,button)
         return super(GameView,self).MouseButtonDown(pos,button)
 

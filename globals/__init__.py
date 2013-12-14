@@ -11,3 +11,5 @@ dragging              = None
 player_config         = None
 screen_root           = None
 time                  = 0
+left_button           = 1
+right_button          = 3

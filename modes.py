@@ -86,8 +86,6 @@ class Titles(Mode):
 class GameMode(Mode):
     shuttle_name = 'shuttle.png'
     debris_name  = 'debris.png'
-    left_button  = 1
-    right_button = 3
     def __init__(self,parent):
         self.parent = parent
         #try adding a box in the middle of the screen for fun
@@ -101,32 +99,22 @@ class GameMode(Mode):
                                                 bl = pos,
                                                 tr = pos + obj.size,
                                                 tc = parent.atlas.TextureSpriteCoords(name)))
-        self.parent.AddPlayer(Point(0.45,0.35), True)
+        self.parent.AddPlayer(Point(0.45,0.35),True)
         self.parent.AddPlayer(Point(0.60,0.25))
 
     def MouseButtonDown(self,pos,button):
         print 'mouse button down',pos,button
         if self.parent.selected_player != None:
-            if button == self.left_button and self.parent.selected_player.IsGrabbed():
-                self.parent.selected_player.PreparePush()
+            self.parent.selected_player.MouseButtonDown(pos,button)
 
     def MouseButtonUp(self,pos,button):
         #print 'mouse button up',pos,button
         if self.parent.selected_player != None:
-            if button == self.left_button:
-                if self.parent.selected_player.IsGrabbed():
-                    self.parent.selected_player.Push()
-                else:
-                    obj = self.parent.physics.GetObjectAtPoint(pos)
-                    if obj and obj is not self.parent.selected_player:
-                        self.parent.selected_player.Grab(obj,pos)
-            elif button == self.right_button:
-                self.parent.selected_player.Ungrab()
+            self.parent.selected_player.MouseButtonUp(pos,button)
 
     def KeyUp(self,key):
         if key == pygame.K_TAB:
             self.parent.NextPlayer()
-        
 
 class GameOver(Mode):
     blurb = "GAME OVER"
@@ -187,7 +175,6 @@ class GameOver(Mode):
         elif self.continued:
             return TitleStages.COMPLETE
         return TitleStages.TEXT
-
 
     def KeyDown(self,key):
         #if key in [13,27,32]: #return, escape, space

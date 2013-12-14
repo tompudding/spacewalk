@@ -35,7 +35,6 @@ class StaticBox(object):
         self.midpoint = (tr - bl)*0.5*physics.scale_factor
         self.bodydef.position = tuple((bl*physics.scale_factor) + self.midpoint)
         self.shape = self.CreateShape(self.midpoint)
-        #self.shape.filter.groupIndex = -1
         if not self.static:
             self.shape.userData = self
         if self.filter_group != None:
@@ -150,20 +149,38 @@ class PlayerArm(object):
         self.end_pos    = pos
         self.Update()
 
+class FireExtinguisher(object):
+    z_level = 12
+    texture_name = 'fire_extinguisher_held.png'
+    def __init__(self,parent):
+        self.parent = parent
+        self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
+        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
+        bl = self.parent.midpoint*Point(0,1.8)
+        half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
+        self.shape = self.parent.CreateShape(half_size,bl)
+
+    def PhysUpdate(self):
+        for i,vertex in enumerate(self.shape.vertices):
+            screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
+            self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
+
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
+    texture_name_fe       = 'astronaut_body_fe.png'
     selected_name         = 'selected.png'
     push_strength         = 300
-    stretching_arm_length = 1.5
+    stretching_arm_length = 15
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
     grab_angle            = 1.5
     z_level               = 12
     filter_id             = -1
-    def __init__(self,physics,bl,fire_extinguisher):
+    def __init__(self,physics,bl):
         self.arms              = []
         self.selected          = False
         self.unset             = None
+        self.fire_extinguisher = None
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
         self.selected_subimage = globals.atlas.SubimageSprite(self.selected_name)
@@ -180,6 +197,10 @@ class Player(DynamicBox):
                           self.midpoint*Point(-0.8,0))
         self.arms      = [PlayerArm(self,(self,self.shoulders[0]),(self,self.resting_hand_positions[0])),
                           PlayerArm(self,(self,self.shoulders[1]),(self,self.resting_hand_positions[1]))]
+
+    def EquipFireExtinguisher(self):
+        #Adding a new shape to ourselves
+        self.fire_extinguisher = FireExtinguisher(self)
 
     # def ExtraShapes(self):
     #     #Players have arms
@@ -209,6 +230,8 @@ class Player(DynamicBox):
             arm.Update()
         if self.unset and globals.time >= self.unset[1]:
             self.ResetFilters()
+        if self.fire_extinguisher:
+            self.fire_extinguisher.PhysUpdate()
 
     def ResetFilters(self):
         #print 'resetting filters'
@@ -229,6 +252,21 @@ class Player(DynamicBox):
         if self.selected:
             self.selected = False
             self.selected_quad.Disable()
+
+    def MouseButtonDown(self,pos,button):
+        if button == globals.left_button and self.IsGrabbed():
+            self.PreparePush()
+
+    def MouseButtonUp(self,pos,button):
+        if button == globals.left_button:
+            if self.IsGrabbed():
+                self.Push()
+            else:
+                obj = self.physics.GetObjectAtPoint(pos)
+                if obj and obj is not self:
+                    self.Grab(obj,pos)
+        elif button == globals.right_button:
+            self.Ungrab()
 
     def Grab(self,obj,pos):
         #First we need to decide if we're close enough to grab it
