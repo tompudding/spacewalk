@@ -129,6 +129,30 @@ class DynamicBox(StaticBox):
         if self.health < 0:
             self.Destroy()
 
+class PlayerArm(object):
+    def __init__(self,parent,start,end):
+        self.parent = parent
+        self.start_object,self.start_pos = start
+        self.end_object,self.end_pos = end
+        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords('debris.png'))
+        
+    def Update(self):
+        vertices = []
+        for i,(obj,vertex) in enumerate(((self.start_object,self.start_pos-Point(0.1,0)),
+                                         (self.start_object,self.start_pos+Point(0.1,0)),
+                                         (self.end_object,self.end_pos+Point(0.1,0)),
+                                         (self.end_object,self.end_pos-Point(0.1,0)))):
+            posv = box2d.b2Vec2()
+            posv[0] = vertex[0]
+            posv[1] = vertex[1]
+            screen_coords = Point(*obj.body.GetWorldPoint(posv))/self.parent.physics.scale_factor
+            self.quad.vertex[i] = (screen_coords.x,screen_coords.y,9)
+
+    def SetHand(self,obj,pos):
+        self.end_object = obj
+        self.end_pos    = pos
+        self.Update()
+
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     selected_name         = 'selected.png'
@@ -138,6 +162,7 @@ class Player(DynamicBox):
     pushing_arm_length    = 0.8
     grab_angle            = 1.5
     def __init__(self,physics,bl,fire_extinguisher):
+        self.arms              = []
         self.selected          = False
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
@@ -145,8 +170,12 @@ class Player(DynamicBox):
         self.selected_texture_coords = globals.atlas.TextureSpriteCoords(self.selected_name)
         tr                     = bl + self.subimage.size
         super(Player,self).__init__(physics,bl,tr,self.texture_coords)
-        self.joint = None
+        self.joint     = None
         self.other_obj = None
+        self.resting_hand_positions = (self.midpoint*Point(0.8,1),
+                                       self.midpoint*Point(-0.8,1))
+        self.arms      = [PlayerArm(self,(self,self.midpoint*Point(0.8,0)),(self,self.resting_hand_positions[0])),
+                          PlayerArm(self,(self,self.midpoint*Point(-0.8,0)),(self,self.resting_hand_positions[1]))]
 
     # def ExtraShapes(self):
     #     #Players have arms
@@ -172,6 +201,8 @@ class Player(DynamicBox):
         bl = centre - (self.selected_subimage.size/2)
         tr = bl + self.selected_subimage.size
         self.selected_quad.SetVertices(bl,tr,20)
+        for arm in self.arms:
+            arm.Update()
 
        # for i,vertex in enumerate(self.arm.vertices):
        #     screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
@@ -209,6 +240,12 @@ class Player(DynamicBox):
         joint.length = self.resting_arm_length
         self.joint = self.physics.world.CreateJoint(joint)
         self.other_obj = obj
+        phys_pos_vec = box2d.b2Vec2()
+        phys_pos_vec[0] = phys_pos[0]
+        phys_pos_vec[1] = phys_pos[1]
+        other_local_pos = Point(*obj.body.GetLocalPoint(phys_pos_vec))
+        self.arms[0].SetHand(obj,other_local_pos)
+        self.arms[1].SetHand(obj,other_local_pos)
         print self,'grappled'
 
     def IsGrabbed(self):
@@ -220,6 +257,8 @@ class Player(DynamicBox):
         self.physics.world.DestroyJoint(self.joint)
         self.joint = None
         self.other_obj = None
+        for i in 0,1:
+            self.arms[i].SetHand(self,self.resting_hand_positions[i])
         print 'ungrapple'
 
     def PreparePush(self):
