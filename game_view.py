@@ -92,8 +92,8 @@ class Physics(object):
         return None
 
 class GameView(ui.RootElement):
-    grapple_button = 1
-    push_button    = 3
+    left_button = 1
+    right_button    = 3
     def __init__(self):
         self.selected_player = None
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
@@ -182,21 +182,22 @@ class GameView(ui.RootElement):
     def MouseButtonDown(self,pos,button):
         print 'mouse button down',pos,button
         if self.selected_player != None:
-            if button == self.grapple_button:
-                obj = self.physics.GetObjectAtPoint(pos)
-                if obj and obj is not self.selected_player:
-                    self.selected_player.Grab(obj,pos)
-            elif button == self.push_button:
+            if button == self.left_button and self.selected_player.IsGrabbed():
                 self.selected_player.PreparePush()
         return super(GameView,self).MouseButtonDown(pos,button)
 
     def MouseButtonUp(self,pos,button):
         #print 'mouse button up',pos,button
         if self.selected_player != None:
-            if button == self.grapple_button:
+            if button == self.left_button:
+                if self.selected_player.IsGrabbed():
+                    self.selected_player.Push()
+                else:
+                    obj = self.physics.GetObjectAtPoint(pos)
+                    if obj and obj is not self.selected_player:
+                        self.selected_player.Grab(obj,pos)
+            elif button == self.right_button:
                 self.selected_player.Ungrab()
-            elif button == self.push_button:
-                self.selected_player.Push()
         return super(GameView,self).MouseButtonUp(pos,button)
 
     def NextPlayer(self):
