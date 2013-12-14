@@ -1,0 +1,2 @@
+all:
+	python spacewalk.py

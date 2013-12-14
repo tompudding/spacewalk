@@ -1,7 +1,17 @@
 from OpenGL.GL import *
-import random,numpy,cmath,math,pygame
+import random
+import numpy
+import cmath
+import math
+import pygame
 
-import ui,globals,drawing,os,copy
+import ui
+import globals
+import drawing
+import os
+import copy
+import actors
+
 from globals.types import Point
 import sys
 
@@ -30,7 +40,7 @@ class TitleStages(object):
     WAIT     = 4
 
 class Titles(Mode):
-    blurb = "SKELETON"
+    blurb = "SPACEWALK"
     def __init__(self,parent):
         self.parent          = parent
         self.start           = pygame.time.get_ticks()
@@ -70,6 +80,11 @@ class Titles(Mode):
 class GameMode(Mode):
     def __init__(self,parent):
         self.parent = parent
+        #try adding a box in the middle of the screen for fun
+        self.items = [actors.DynamicBox(self.parent.physics,
+                                        bl = self.parent.absolute.size*0.4,
+                                        tr = self.parent.absolute.size*0.6,
+                                        tc = parent.atlas.TextureSpriteCoords('shuttle.png'))]
         
 
 class GameOver(Mode):

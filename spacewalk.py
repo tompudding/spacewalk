@@ -9,23 +9,22 @@ from globals.types import Point
 def Init():
     """Initialise everything. Run once on startup"""
     w,h = (1280,720)
-    globals.tile_scale            = Point(1,1)
     globals.scale                 = Point(4,4)
     globals.screen                = Point(w,h)/globals.scale
     globals.screen_root           = ui.UIRoot(Point(0,0),globals.screen)
+    globals.quad_buffer           = drawing.QuadBuffer(131072)
     globals.ui_buffer             = drawing.QuadBuffer(131072)
     globals.nonstatic_text_buffer = drawing.QuadBuffer(131072)
     globals.colour_tiles          = drawing.QuadBuffer(131072)
     globals.mouse_relative_buffer = drawing.QuadBuffer(1024)
     globals.line_buffer           = drawing.LineBuffer(16384)
-    globals.tile_dimensions       = Point(16,16)*globals.tile_scale
     globals.sounds                = sounds.Sounds()
 
     globals.dirs = globals.types.Directories('resource')
 
     pygame.init()
     screen = pygame.display.set_mode((w,h),pygame.OPENGL|pygame.DOUBLEBUF)
-    pygame.display.set_caption('skeleton')
+    pygame.display.set_caption('Spacewalk')
     drawing.Init(globals.screen.x,globals.screen.y)
 
     globals.text_manager = drawing.texture.TextManager()
