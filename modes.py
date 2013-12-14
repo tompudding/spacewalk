@@ -26,8 +26,14 @@ class Mode(object):
     def KeyUp(self,key):
         pass
 
+    def MouseMotion(self,pos,rel):
+        pass
+
     def MouseButtonDown(self,pos,button):
-        return False,False
+        return
+
+    def MouseButtonUp(self,pos,button):
+        return
 
     def Update(self,t):
         pass
@@ -80,6 +86,8 @@ class Titles(Mode):
 class GameMode(Mode):
     shuttle_name = 'shuttle.png'
     debris_name  = 'debris.png'
+    left_button  = 1
+    right_button = 3
     def __init__(self,parent):
         self.parent = parent
         #try adding a box in the middle of the screen for fun
@@ -95,6 +103,25 @@ class GameMode(Mode):
                                                 tc = parent.atlas.TextureSpriteCoords(name)))
         self.parent.AddPlayer(Point(0.45,0.35), True)
         self.parent.AddPlayer(Point(0.60,0.25))
+
+    def MouseButtonDown(self,pos,button):
+        print 'mouse button down',pos,button
+        if self.parent.selected_player != None:
+            if button == self.left_button and self.parent.selected_player.IsGrabbed():
+                self.parent.selected_player.PreparePush()
+
+    def MouseButtonUp(self,pos,button):
+        #print 'mouse button up',pos,button
+        if self.parent.selected_player != None:
+            if button == self.left_button:
+                if self.parent.selected_player.IsGrabbed():
+                    self.parent.selected_player.Push()
+                else:
+                    obj = self.parent.physics.GetObjectAtPoint(pos)
+                    if obj and obj is not self.parent.selected_player:
+                        self.parent.selected_player.Grab(obj,pos)
+            elif button == self.right_button:
+                self.parent.selected_player.Ungrab()
 
     def KeyUp(self,key):
         if key == pygame.K_TAB:
