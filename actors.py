@@ -156,21 +156,26 @@ class FireExtinguisher(object):
         self.parent = parent
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
-        bl = self.parent.midpoint*Point(0,1.8)
-        half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
-        self.shape = self.parent.CreateShape(half_size,bl)
+        self.bl = self.parent.midpoint*Point(0,1.8)
+        self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
+        self.shape = self.parent.CreateShape(self.half_size,self.bl)
+        self.base_pos = self.bl + self.half_size*Point(0.3,0.05)
+        self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
 
     def PhysUpdate(self):
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
+            
+    def Rotate(self,angle):
+        self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),angle)
 
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     texture_name_fe       = 'astronaut_body_fe.png'
     selected_name         = 'selected.png'
     push_strength         = 300
-    stretching_arm_length = 15
+    stretching_arm_length = 1.5
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
     grab_angle            = 1.5
@@ -193,6 +198,7 @@ class Player(DynamicBox):
         Player.filter_id -= 1
         self.resting_hand_positions = (self.midpoint*Point(0.8,1),
                                        self.midpoint*Point(-0.8,1))
+        self.current_hand_positions = self.resting_hand_positions
         self.shoulders = (self.midpoint*Point(0.8,0),
                           self.midpoint*Point(-0.8,0))
         self.arms      = [PlayerArm(self,(self,self.shoulders[0]),(self,self.resting_hand_positions[0])),
@@ -201,6 +207,9 @@ class Player(DynamicBox):
     def EquipFireExtinguisher(self):
         #Adding a new shape to ourselves
         self.fire_extinguisher = FireExtinguisher(self)
+        self.current_hand_positions = (self.fire_extinguisher.base_pos,self.fire_extinguisher.hose_pos)
+        self.arms[0].SetHand(self,self.fire_extinguisher.base_pos)
+        self.arms[1].SetHand(self,self.fire_extinguisher.hose_pos)
 
     # def ExtraShapes(self):
     #     #Players have arms
@@ -252,6 +261,9 @@ class Player(DynamicBox):
         if self.selected:
             self.selected = False
             self.selected_quad.Disable()
+
+    def MouseMotion(self,pos,rel):
+        print pos
 
     def MouseButtonDown(self,pos,button):
         if button == globals.left_button and self.IsGrabbed():
@@ -307,7 +319,7 @@ class Player(DynamicBox):
         self.joints = []
         self.other_obj = None
         for i in 0,1:
-            self.arms[i].SetHand(self,self.resting_hand_positions[i])
+            self.arms[i].SetHand(self,self.current_hand_positions[i])
         #print 'ungrapple'
 
     def PreparePush(self):
