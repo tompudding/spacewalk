@@ -89,6 +89,7 @@ class StaticBox(object):
 class DynamicBox(StaticBox):
     static = False
     health = 30
+    vertex_permutation = (0,3,2,1)
     def __init__(self,physics,bl,tr,tc):
         super(DynamicBox,self).__init__(physics,bl,tr,tc)
 
@@ -107,10 +108,17 @@ class DynamicBox(StaticBox):
 
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
-            self.quad.vertex[(i+3)%4] = (screen_coords.x,screen_coords.y,10)
+            self.quad.vertex[self.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,10)
 
     def Damage(self,amount):
         self.health -= amount
         if self.health < 0:
             self.Destroy()
 
+class Player(DynamicBox):
+    texture_name = 'astronaut_body.png'
+    def __init__(self,physics,bl,fire_extinguisher):
+        self.subimage = globals.atlas.SubimageSprite(self.texture_name)
+        self.texture_coords = globals.atlas.TextureSpriteCoords(self.texture_name)
+        tr = bl + self.subimage.size
+        super(Player,self).__init__(physics,bl,tr,self.texture_coords)

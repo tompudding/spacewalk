@@ -4,7 +4,7 @@ import random,numpy,cmath,math,pygame
 import ui,globals,drawing,os,copy
 from globals.types import Point
 import Box2D as box2d
-#import actors
+import actors
 import modes
 import random
 
@@ -72,22 +72,7 @@ class Physics(object):
     def Step(self):
         self.contacts = []
         self.world.Step(self.timeStep, self.velocityIterations, self.positionIterations)
-        for contact in self.contacts:
-            #print contact
-            if isinstance(contact.shape1.userData,actors.Bullet):
-                bullet = contact.shape1
-                target = contact.shape2
-            elif isinstance(contact.shape2.userData,actors.Bullet):
-                bullet = contact.shape2
-                target = contact.shape1
-            else:
-                bullet = None
-                target = None
-            if bullet:
-                bullet.userData.Destroy()
-                if target.userData != None:
-                    target.userData.Damage(bullet.userData.damage)
-                #print 'Bullet Collision!'
+        
         for obj in self.objects:
             obj.PhysUpdate()
 
@@ -101,6 +86,7 @@ class GameView(ui.RootElement):
         self.physics = Physics(self)
         #skip titles for development of the main game
         #self.mode = modes.Titles(self)
+        self.players = []
         self.mode = modes.GameMode(self)
         self.paused = False
         
@@ -149,3 +135,7 @@ class GameView(ui.RootElement):
                 pygame.mixer.music.set_volume(1)
         self.mode.KeyUp(key)
 
+    def AddPlayer(self,pos,fire_extinguisher = False):
+        bl = self.absolute.size*pos
+        player = actors.Player(self.physics,bl,fire_extinguisher)
+        self.players.append(player)

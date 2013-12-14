@@ -78,13 +78,23 @@ class Titles(Mode):
         return TitleStages.STARTED
 
 class GameMode(Mode):
+    shuttle_name = 'shuttle.png'
+    debris_name  = 'debris.png'
     def __init__(self,parent):
         self.parent = parent
         #try adding a box in the middle of the screen for fun
-        self.items = [actors.DynamicBox(self.parent.physics,
-                                        bl = self.parent.absolute.size*0.4,
-                                        tr = self.parent.absolute.size*0.6,
-                                        tc = parent.atlas.TextureSpriteCoords('shuttle.png'))]
+        self.items = []
+        for name,pos in ((self.shuttle_name,self.parent.absolute.size*0.4),
+                         (self.debris_name,self.parent.absolute.size*Point(0.3,0.3)),
+                         (self.debris_name,self.parent.absolute.size*Point(0.3,0.6)),
+                         (self.debris_name,self.parent.absolute.size*Point(0.6,0.3))):
+            obj = parent.atlas.SubimageSprite(name)
+            self.items.append(actors.DynamicBox(self.parent.physics,
+                                                bl = pos,
+                                                tr = pos + obj.size,
+                                                tc = parent.atlas.TextureSpriteCoords(name)))
+        self.parent.AddPlayer(Point(0.45,0.05), True)
+        self.parent.AddPlayer(Point(0.55,0.05))
         
 
 class GameOver(Mode):
