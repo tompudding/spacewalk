@@ -1,4 +1,5 @@
 import math,os
+import Box2D as box2d
 
 class FatalError(Exception):
     pass
@@ -62,6 +63,12 @@ class Point(object):
 
     def to_int(self):
         return Point(int(self.x),int(self.y))
+
+    def to_vec(self):
+        v = box2d.b2Vec2()
+        v[0] = self.x
+        v[1] = self.y
+        return v
 
     def next(self):
         try:

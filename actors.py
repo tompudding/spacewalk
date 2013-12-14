@@ -16,6 +16,7 @@ class StaticBox(object):
     filter_group = None
     static   = True
     health   = 500
+    z_level  = 10
     def __init__(self,physics,bl,tr,tc = None):
         #Hardcode the dirt texture since right now all static things are dirt. I know I know.
         self.dead = False
@@ -34,6 +35,7 @@ class StaticBox(object):
         self.midpoint = (tr - bl)*0.5*physics.scale_factor
         self.bodydef.position = tuple((bl*physics.scale_factor) + self.midpoint)
         self.shape = self.CreateShape(self.midpoint)
+        #self.shape.filter.groupIndex = -1
         if not self.static:
             self.shape.userData = self
         if self.filter_group != None:
@@ -77,10 +79,7 @@ class StaticBox(object):
         if pos == None:
             shape.SetAsBox(*midpoint)
         else:
-            posv = box2d.b2Vec2()
-            posv[0] = pos[0]
-            posv[1] = pos[1]
-            shape.SetAsBox(midpoint[0],midpoint[1],posv,0)
+            shape.SetAsBox(midpoint[0],midpoint[1],pos.to_vec(),0)
         return shape
 
     def InitPolygons(self,tc):
@@ -122,7 +121,7 @@ class DynamicBox(StaticBox):
 
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
-            self.quad.vertex[self.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,10)
+            self.quad.vertex[self.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
 
     def Damage(self,amount):
         self.health -= amount
@@ -130,6 +129,7 @@ class DynamicBox(StaticBox):
             self.Destroy()
 
 class PlayerArm(object):
+    z_level = 11
     def __init__(self,parent,start,end):
         self.parent = parent
         self.start_object,self.start_pos = start
@@ -142,11 +142,8 @@ class PlayerArm(object):
                                          (self.start_object,self.start_pos+Point(0.1,0)),
                                          (self.end_object,self.end_pos+Point(0.1,0)),
                                          (self.end_object,self.end_pos-Point(0.1,0)))):
-            posv = box2d.b2Vec2()
-            posv[0] = vertex[0]
-            posv[1] = vertex[1]
-            screen_coords = Point(*obj.body.GetWorldPoint(posv))/self.parent.physics.scale_factor
-            self.quad.vertex[i] = (screen_coords.x,screen_coords.y,9)
+            screen_coords = Point(*obj.body.GetWorldPoint(vertex.to_vec()))/self.parent.physics.scale_factor
+            self.quad.vertex[i] = (screen_coords.x,screen_coords.y,self.z_level)
 
     def SetHand(self,obj,pos):
         self.end_object = obj
@@ -157,25 +154,32 @@ class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     selected_name         = 'selected.png'
     push_strength         = 300
-    stretching_arm_length = 1.1
+    stretching_arm_length = 1.5
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
     grab_angle            = 1.5
+    z_level               = 12
+    filter_id             = -1
     def __init__(self,physics,bl,fire_extinguisher):
         self.arms              = []
         self.selected          = False
+        self.unset             = None
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
         self.selected_subimage = globals.atlas.SubimageSprite(self.selected_name)
         self.selected_texture_coords = globals.atlas.TextureSpriteCoords(self.selected_name)
         tr                     = bl + self.subimage.size
         super(Player,self).__init__(physics,bl,tr,self.texture_coords)
-        self.joint     = None
+        self.joints    = []
         self.other_obj = None
+        self.filter_group = Player.filter_id
+        Player.filter_id -= 1
         self.resting_hand_positions = (self.midpoint*Point(0.8,1),
                                        self.midpoint*Point(-0.8,1))
-        self.arms      = [PlayerArm(self,(self,self.midpoint*Point(0.8,0)),(self,self.resting_hand_positions[0])),
-                          PlayerArm(self,(self,self.midpoint*Point(-0.8,0)),(self,self.resting_hand_positions[1]))]
+        self.shoulders = (self.midpoint*Point(0.8,0),
+                          self.midpoint*Point(-0.8,0))
+        self.arms      = [PlayerArm(self,(self,self.shoulders[0]),(self,self.resting_hand_positions[0])),
+                          PlayerArm(self,(self,self.shoulders[1]),(self,self.resting_hand_positions[1]))]
 
     # def ExtraShapes(self):
     #     #Players have arms
@@ -203,6 +207,14 @@ class Player(DynamicBox):
         self.selected_quad.SetVertices(bl,tr,20)
         for arm in self.arms:
             arm.Update()
+        if self.unset and globals.time >= self.unset[1]:
+            self.ResetFilters()
+
+    def ResetFilters(self):
+        #print 'resetting filters'
+        self.unset[0].shape.filter.groupIndex = 0
+        self.shape.filter.groupIndex = 0
+        self.unset = None
 
        # for i,vertex in enumerate(self.arm.vertices):
        #     screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
@@ -220,7 +232,7 @@ class Player(DynamicBox):
 
     def Grab(self,obj,pos):
         #First we need to decide if we're close enough to grab it
-        if self.joint:
+        if self.joints:
             self.Ungrab()
         phys_pos = pos*self.physics.scale_factor
         centre = self.body.position
@@ -232,40 +244,40 @@ class Player(DynamicBox):
         angle = (angle - (math.pi/2) - self.GetAngle())%(math.pi*2)
         if not (angle < self.grab_angle or (math.pi*2-angle) < self.grab_angle):
             return
-        joint = box2d.b2DistanceJointDef()
-        joint.Initialize(self.body,obj.body,self.body.GetWorldCenter(),tuple(phys_pos))
-        joint.collideConnected = True
-        joint.frequencyHz   = 4.0
-        joint.dampingRatio  = 0.01
-        joint.length = self.resting_arm_length
-        self.joint = self.physics.world.CreateJoint(joint)
+        for shoulder in self.shoulders:
+            joint = box2d.b2DistanceJointDef()
+            joint.Initialize(self.body,obj.body,self.body.GetWorldPoint(shoulder.to_vec()),tuple(phys_pos))
+            joint.collideConnected = True
+            joint.frequencyHz   = 4.0
+            joint.dampingRatio  = 0.01
+            joint.length = self.resting_arm_length
+            self.joints.append(self.physics.world.CreateJoint(joint))
         self.other_obj = obj
-        phys_pos_vec = box2d.b2Vec2()
-        phys_pos_vec[0] = phys_pos[0]
-        phys_pos_vec[1] = phys_pos[1]
-        other_local_pos = Point(*obj.body.GetLocalPoint(phys_pos_vec))
+        other_local_pos = Point(*obj.body.GetLocalPoint(phys_pos.to_vec()))
         self.arms[0].SetHand(obj,other_local_pos)
         self.arms[1].SetHand(obj,other_local_pos)
-        print self,'grappled'
+        #print self,'grappled'
 
     def IsGrabbed(self):
-        return self.joint != None
+        return len(self.joints) != 0
 
     def Ungrab(self):
         if not self.IsGrabbed():
             return
-        self.physics.world.DestroyJoint(self.joint)
-        self.joint = None
+        for joint in self.joints:
+            self.physics.world.DestroyJoint(joint)
+        self.joints = []
         self.other_obj = None
         for i in 0,1:
             self.arms[i].SetHand(self,self.resting_hand_positions[i])
-        print 'ungrapple'
+        #print 'ungrapple'
 
     def PreparePush(self):
         if not self.IsGrabbed():
             return
-        self.joint.length = self.pushing_arm_length
-        print 'prepare push'
+        for joint in self.joints:
+            joint.length = self.pushing_arm_length
+        #print 'prepare push'
 
     def Push(self):
         if not self.IsGrabbed():
@@ -275,7 +287,7 @@ class Player(DynamicBox):
         print 'pushing'
         #Push on another object. Equal and opposite forces and what not
         #Fire a ray from my player to the object. Where it meets is where the force should be applied
-        centre = self.body.GetWorldPoint([0,self.midpoint[1]*1.1])
+        centre = self.body.GetWorldPoint([0,self.midpoint[1]*1.01])
         front = self.body.GetWorldPoint([0,self.midpoint[1]*100])
 
         cast_segment=box2d.b2Segment()
@@ -287,8 +299,19 @@ class Player(DynamicBox):
             return
         if shape != obj.shapeI:
             return
+        if abs(normal[0]) < 0.5 and abs(normal[1]) < 0.5:
+            #print 'updating normal!',normal
+            normal = Point(*(centre-front))
+            normal/=normal.length()
+            normal = normal.to_vec()
+            
+        if self.unset:
+            self.ResetFilters()
+        obj.shape.filter.groupIndex = self.filter_group
+        self.shape.filter.groupIndex = self.filter_group
+        self.unset = (obj,globals.time + 500)
         self.body.ApplyForce(normal*self.push_strength,centre)
         intersection_point = self.body.GetWorldPoint((front-centre)*lam)
         shape.userData.body.ApplyForce(-normal*self.push_strength,intersection_point) 
-        print 'force added!'
+        #print 'force added!',normal*self.push_strength,centre
 
