@@ -93,8 +93,12 @@ class GameMode(Mode):
                                                 bl = pos,
                                                 tr = pos + obj.size,
                                                 tc = parent.atlas.TextureSpriteCoords(name)))
-        self.parent.AddPlayer(Point(0.45,0.05), True)
-        self.parent.AddPlayer(Point(0.55,0.05))
+        self.parent.AddPlayer(Point(0.45,0.25), True)
+        self.parent.AddPlayer(Point(0.55,0.25))
+
+    def KeyUp(self,key):
+        if key == pygame.K_TAB:
+            self.parent.NextPlayer()
         
 
 class GameOver(Mode):

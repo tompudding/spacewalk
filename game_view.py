@@ -81,21 +81,20 @@ class Physics(object):
         aabb = box2d.b2AABB()
         phys_pos = pos*self.scale_factor
 
-        print pos,phys_pos
         aabb.lowerBound.Set(phys_pos.x-0.1,phys_pos.y-0.1)
         aabb.upperBound.Set(phys_pos.x+0.1,phys_pos.y+0.1)
         (count,shapes) = self.world.Query(aabb,10)
-        print count
         for shape in shapes:
             trans = box2d.b2XForm()
             trans.SetIdentity()
             p = phys_pos - Point(*shape.GetBody().position)
             if shape.TestPoint(trans,tuple(p)):
-                print shape
-                break
+                return shape.userData
+        return None
 
 class GameView(ui.RootElement):
     def __init__(self):
+        self.selected_player = None
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
         self.game_over = False
         #pygame.mixer.music.load('music.ogg')
@@ -107,8 +106,20 @@ class GameView(ui.RootElement):
         self.players = []
         self.mode = modes.GameMode(self)
         self.paused = False
-        self.selected_player = None
         self.StartMusic()
+        self.walls = [actors.StaticBox(self.physics,
+                                       bl = Point(0,0),
+                                       tr = Point(1,self.absolute.size.y)),
+                      actors.StaticBox(self.physics,
+                                       bl = Point(self.absolute.size.x,0),
+                                       tr = Point(self.absolute.size.x+1,self.absolute.size.y)),
+                      actors.StaticBox(self.physics,
+                                       bl = Point(0,self.absolute.size.y),
+                                       tr = Point(self.absolute.size.x,self.absolute.size.y+1)),
+                      actors.StaticBox(self.physics,
+                                       bl = Point(0,0),
+                                       tr = Point(self.absolute.size.x,1)),
+                      ]
 
     def StartMusic(self):
         pass
@@ -173,5 +184,18 @@ class GameView(ui.RootElement):
 
     def MouseButtonUp(self,pos,button):
         #print 'mouse button up',pos,button
-        self.physics.GetObjectAtPoint(pos)
+        if self.selected_player != None:
+            obj = self.physics.GetObjectAtPoint(pos)
+            if obj and obj is not self.selected_player:
+                self.selected_player.Push(obj)
         return super(GameView,self).MouseButtonUp(pos,button)
+
+    def NextPlayer(self):
+        if self.selected_player == None:
+            if len(self.players) != 0:
+                self.selected_player = self.players[0]
+        else:
+            current_index = self.players.index(self.selected_player)
+            self.selected_player.Unselect()
+            self.selected_player = self.players[(current_index + 1)%len(self.players)]
+            self.selected_player.Select()

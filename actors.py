@@ -29,9 +29,9 @@ class StaticBox(object):
             self.visible = False
         self.physics = physics
         self.bodydef = box2d.b2BodyDef()
-        midpoint = (tr - bl)*0.5*physics.scale_factor
-        self.bodydef.position = tuple((bl*physics.scale_factor) + midpoint)
-        self.shape = self.CreateShape(midpoint)
+        self.midpoint = (tr - bl)*0.5*physics.scale_factor
+        self.bodydef.position = tuple((bl*physics.scale_factor) + self.midpoint)
+        self.shape = self.CreateShape(self.midpoint)
         if not self.static:
             self.shape.userData = self
         if self.filter_group != None:
@@ -82,7 +82,7 @@ class StaticBox(object):
         return shape
 
     def InitPolygons(self,tc):
-        raise NotImplemented
+        return
 
     def GetPos(self):
         if self.dead:
@@ -95,7 +95,7 @@ class StaticBox(object):
         return self.body.angle
 
     def PhysUpdate(self):
-        raise NotImplemented
+        return
 
 
 class DynamicBox(StaticBox):
@@ -130,6 +130,7 @@ class DynamicBox(StaticBox):
 class Player(DynamicBox):
     texture_name  = 'astronaut_body.png'
     selected_name = 'selected.png'
+    push_strength = 300
     def __init__(self,physics,bl,fire_extinguisher):
         self.selected          = False
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
@@ -177,3 +178,24 @@ class Player(DynamicBox):
         if self.selected:
             self.selected = False
             self.selected_quad.Disable()
+
+    def Push(self,obj):
+        #Push on another object. Equal and opposite forces and what not
+        #Fire a ray from my player to the object. Where it meets is where the force should be applied
+        centre = self.body.GetWorldPoint([0,self.midpoint[1]*1.1])
+        front = self.body.GetWorldPoint([0,self.midpoint[1]*100])
+
+        cast_segment=box2d.b2Segment()
+        cast_segment.p1 = centre
+        cast_segment.p2 = front
+
+        lam, normal, shape = self.physics.world.RaycastOne(cast_segment,True,None)
+        if shape == self.shapeI:
+            return
+        if shape != obj.shapeI:
+            return
+        #self.body.ApplyForce(normal*self.push_strength,self.body.position)
+        self.body.ApplyForce(normal*self.push_strength,centre)
+        intersection_point = self.body.GetWorldPoint((front-centre)*lam)
+        shape.userData.body.ApplyForce(-normal*self.push_strength,intersection_point) 
+
