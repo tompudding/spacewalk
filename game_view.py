@@ -49,7 +49,7 @@ class MyContactListener(box2d.b2ContactListener):
         pass
 
 class Physics(object):
-    scale_factor = 0.1
+    scale_factor = 0.05
     def __init__(self,parent):
         self.contact_listener = MyContactListener()
         self.contact_listener.physics = self
@@ -67,7 +67,6 @@ class Physics(object):
         self.objects = []
     
     def AddObject(self,obj):
-        print 'object at',obj.bodydef.position
         self.objects.append(obj)
 
     def Step(self):
@@ -93,6 +92,8 @@ class Physics(object):
         return None
 
 class GameView(ui.RootElement):
+    grapple_button = 1
+    push_button    = 3
     def __init__(self):
         self.selected_player = None
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
@@ -179,15 +180,23 @@ class GameView(ui.RootElement):
         return super(GameView,self).MouseMotion(pos,rel,handled)
 
     def MouseButtonDown(self,pos,button):
-        #print 'mouse button down',pos,button
+        print 'mouse button down',pos,button
+        if self.selected_player != None:
+            if button == self.grapple_button:
+                obj = self.physics.GetObjectAtPoint(pos)
+                if obj and obj is not self.selected_player:
+                    self.selected_player.Grab(obj,pos)
+            elif button == self.push_button:
+                self.selected_player.PreparePush()
         return super(GameView,self).MouseButtonDown(pos,button)
 
     def MouseButtonUp(self,pos,button):
         #print 'mouse button up',pos,button
         if self.selected_player != None:
-            obj = self.physics.GetObjectAtPoint(pos)
-            if obj and obj is not self.selected_player:
-                self.selected_player.Push(obj)
+            if button == self.grapple_button:
+                self.selected_player.Ungrab()
+            elif button == self.push_button:
+                self.selected_player.Push()
         return super(GameView,self).MouseButtonUp(pos,button)
 
     def NextPlayer(self):
