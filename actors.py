@@ -170,9 +170,15 @@ class FloatingFireExtinguisher(DynamicBox):
         vector_guy = cmath.rect(-thrust,direction)
         bl_phys = fe.base_pos
         bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
+        print vector_guy.real,vector_guy.imag,bl_world,self.parent.body.position
         self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
         self.body.SetLinearVelocity(self.parent.body.GetLinearVelocity())
+        #Now let's apply the impulse to counteract that velocity we've just imparted
+        momentum = -(self.parent.body.GetLinearVelocity()*self.body.GetMass())
+        impulse = momentum/self.parent.body.GetMass()
+        self.parent.body.ApplyImpulse(impulse,self.parent.body.position)
         self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
+        
 
 class FireExtinguisher(object):
     z_level = 12
@@ -208,7 +214,7 @@ class FireExtinguisher(object):
         #self.hose_pos = bl + (size*Point(1.0,0.8))
         centre = self.parent.body.position
         angle  = self.parent.body.angle + (math.pi/2)
-        vector = cmath.rect(self.parent.midpoint[1]*1.1,self.GetDirection())
+        vector = cmath.rect(self.parent.midpoint[1]*1.1,angle)
         self.base_pos = Point(*self.parent.body.GetLocalPoint((centre[0] + vector.real,centre[1] + vector.imag)))
         vector = cmath.rect(self.parent.midpoint[1]*1.5,self.GetDirection())
         self.hose_pos = Point(*self.parent.body.GetLocalPoint((centre[0] + vector.real,centre[1] + vector.imag)))
@@ -350,6 +356,7 @@ class Player(DynamicBox):
             return
         power = ((globals.game_view.mode.power_box.power_level)**2)*self.throw_strength
         globals.game_view.mode.power_box.Disable()
+        self.push_start = None
         self.fire_extinguisher.Destroy()
         #self.shape.filter.groupIndex = self.filter_group
         #print self.shape.filter.groupIndex
@@ -420,7 +427,14 @@ class Player(DynamicBox):
         #You can catch a fire extinguisher from any angle
         if isinstance(obj,FloatingFireExtinguisher):
             print 'caught it!'
+            #Need to add an impulse to this badger
+            vel = obj.body.GetLinearVelocity()
+            mass = obj.body.GetMass()
+            momentum = vel*obj.body.GetMass()
+            impulse = momentum/self.body.GetMass()
+            self.body.ApplyImpulse(impulse,self.body.position)
             obj.Destroy()
+            
             self.EquipFireExtinguisher()
             return
 
