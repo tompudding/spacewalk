@@ -113,17 +113,17 @@ class GameMode(Mode):
                                          scale  = 3)
         self.power_box.Disable()
         self.fe_level.Enable()
-        for name,pos in ((self.shuttle_name,self.parent.absolute.size*0.4),
-                         (self.debris_name,self.parent.absolute.size*Point(0.3,0.3)),
-                         (self.debris_name,self.parent.absolute.size*Point(0.3,0.6)),
-                         (self.debris_name,self.parent.absolute.size*Point(0.6,0.3))):
+        for name,pos in ((self.shuttle_name,globals.screen*0.4),
+                         (self.debris_name,globals.screen*Point(0.3,0.3)),
+                         (self.debris_name,globals.screen*Point(0.3,0.6)),
+                         (self.debris_name,globals.screen*Point(0.6,0.3))):
             obj = parent.atlas.SubimageSprite(name)
             self.items.append(actors.DynamicBox(self.parent.physics,
                                                 bl = pos,
                                                 tr = pos + obj.size,
                                                 tc = parent.atlas.TextureSpriteCoords(name)))
-        self.parent.AddPlayer(Point(0.45,0.25),True)
-        self.parent.AddPlayer(Point(0.60,0.25))
+        self.parent.AddPlayer(Point(0.45,0.25)*(globals.screen.to_float()/self.parent.absolute.size),True)
+        self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:

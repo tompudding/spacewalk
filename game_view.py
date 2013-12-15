@@ -245,7 +245,7 @@ class GameView(ui.RootElement):
         self.dragging = None
         #pygame.mixer.music.load('music.ogg')
         #self.music_playing = False
-        super(GameView,self).__init__(Point(0,0),globals.screen)
+        super(GameView,self).__init__(Point(0,0),Point(2000,2000))
         self.physics = Physics(self)
         #skip titles for development of the main game
         #self.mode = modes.Titles(self)
@@ -371,7 +371,6 @@ class GameView(ui.RootElement):
             self.selected_player.Select()
 
     def ClampViewpos(self):
-        return
         if self.viewpos.pos.x < 0:
             self.viewpos.pos.x = 0
         if self.viewpos.pos.y < 0:
