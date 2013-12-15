@@ -161,7 +161,7 @@ class PlayerArm(object):
         self.parent = parent
         self.start_object,self.start_pos = start
         self.end_object,self.end_pos = end
-        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords('debris.png'))
+        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords('arm.png'))
         
     def Update(self):
         vertices = []

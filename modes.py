@@ -133,7 +133,8 @@ class LevelOne(Mode):
                                          ('h','toggle help'),
                                          ('middle drag','move screen'),
                                          ('middle scroll','zoom'),
-                                         ('space','reset'))):
+                                         ('space','reset'),
+                                         ('tab','switch players'))):
             self.help_box.help.append(ui.TextBox(parent = self.help_box,
                                                  bl = Point(-0.2,p),
                                                  tr = Point(1.2,p+height),
@@ -255,6 +256,8 @@ class LevelOne(Mode):
         elif key == pygame.K_s:
             if self.current_scene == self.ResetSceneOne:
                 self.ResetSceneTwo()
+            elif self.current_scene == self.ResetSceneTwo:
+                self.ResetSceneThree()
 
 class GameOver(Mode):
     blurb = "GAME OVER"
