@@ -83,7 +83,7 @@ class Titles(Mode):
     def Startup(self,t):
         return TitleStages.STARTED
 
-class GameMode(Mode):
+class LevelOne(Mode):
     shuttle_name = 'shuttle.png'
     debris_name  = 'debris.png'
     def __init__(self,parent):
@@ -112,18 +112,70 @@ class GameMode(Mode):
                                          text   = 'Foam Level',
                                          scale  = 3)
         self.power_box.Disable()
-        self.fe_level.Enable()
-        for name,pos in ((self.shuttle_name,globals.screen*0.4),
-                         (self.debris_name,globals.screen*Point(0.3,0.3)),
-                         (self.debris_name,globals.screen*Point(0.3,0.6)),
-                         (self.debris_name,globals.screen*Point(0.6,0.3))):
-            obj = parent.atlas.SubimageSprite(name)
-            self.items.append(actors.DynamicBox(self.parent.physics,
-                                                bl = pos,
-                                                tr = pos + obj.size,
-                                                tc = parent.atlas.TextureSpriteCoords(name)))
-        self.parent.AddPlayer(Point(0.45,0.25)*(globals.screen.to_float()/self.parent.absolute.size),True)
-        self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
+        self.fe_level.Disable()
+        self.help_box = ui.Box(globals.screen_root,
+                               pos = Point(0.7,0.75),
+                               tr = Point(1,1),
+                               colour = drawing.constants.colours.black)
+        self.help_box.title = ui.TextBox(parent = self.help_box,
+                                         bl = Point(0.22,0.8),
+                                         tr = Point(1,1),
+                                         text ='Controls',
+                                         scale = 4)
+        p = 0.7
+        self.help_box.help = []
+        height = 0.1
+        for i,(key,action) in enumerate((('left click','grab/push/spray'),
+                                         ('right click','cancel/detach/throw'),
+                                         ('h','toggle help'),
+                                         ('middle drag','move screen'),
+                                         ('middle scroll','zoom'),
+                                         ('space','reset'))):
+            self.help_box.help.append(ui.TextBox(parent = self.help_box,
+                                                 bl = Point(-0.1,p),
+                                                 tr = Point(1.2,p+height),
+                                                 text = ('%15s %s' % (key,action)),
+                                                 scale = 3))
+            p -= height
+            
+        self.help_box.Enable()
+        #for name,pos in ((self.shuttle_name,globals.screen*2),
+                         #(self.debris_name,globals.screen*Point(0.3,0.3)),
+                         #(self.debris_name,globals.screen*Point(0.3,0.6)),
+        #                 (self.debris_name,globals.screen*Point(0.6,0.3))):
+        #    obj = parent.atlas.SubimageSprite(name)
+        #    self.items.append(actors.DynamicBox(self.parent.physics,
+        #                                        bl = pos,
+        #                                        tr = pos + obj.size,
+        #                                        tc = parent.atlas.TextureSpriteCoords(name)))
+        self.ResetScene()
+
+    def ResetScene(self):
+        for player in self.parent.players:
+            player.Destroy()
+        for item in self.items:
+            item.Destroy()
+        self.items = []
+        self.parent.players = []
+        
+        pos = self.parent.absolute.size*Point(0.48,0.48)
+        obj = self.parent.atlas.SubimageSprite(self.debris_name)
+        self.items.append(actors.DynamicBox(self.parent.physics,
+                                            bl = pos,
+                                            tr = pos + obj.size,
+                                            tc = self.parent.atlas.TextureSpriteCoords(self.debris_name)))
+        self.parent.AddPlayer(Point(0.482,0.47))
+        #work out where it can grab it
+        item = self.items[-1]
+        grab_pos = item.bl + (item.tr - item.bl)*Point(0.5,0.05)
+        self.parent.selected_player.Grab(self.items[-1],grab_pos)
+        #Start the whole thing spinning
+        item.body.ApplyTorque(80)
+        
+        i = 2
+        item.body.ApplyImpulse((-i,0),item.body.position)
+        self.parent.selected_player.body.ApplyImpulse((i,0),self.parent.selected_player.body.position)
+        #self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:
@@ -142,6 +194,13 @@ class GameMode(Mode):
     def KeyUp(self,key):
         if key == pygame.K_TAB:
             self.parent.NextPlayer()
+        elif key == pygame.K_SPACE:
+            self.ResetScene()
+        elif key == pygame.K_h:
+            if self.help_box.enabled:
+                self.help_box.Disable()
+            else:
+                self.help_box.Enable()
 
 class GameOver(Mode):
     blurb = "GAME OVER"

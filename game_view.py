@@ -27,6 +27,7 @@ class Viewpos(object):
 
     def Set(self,point):
         self.pos = point
+        print self.pos
         #self.NoTarget()
 
     def SetTarget(self,point,t,rate=2,callback = None):
@@ -259,11 +260,11 @@ class GameView(ui.RootElement):
         #skip titles for development of the main game
         #self.mode = modes.Titles(self)
         self.players = []
-        self.mode = modes.GameMode(self)
+        self.mode = modes.LevelOne(self)
         self.paused = False
         self.StartMusic()
         self.zoom = 1
-        self.viewpos = Viewpos(Point(0,0))
+        self.viewpos = Viewpos(Point(660,800))
         self.walls = [actors.StaticBox(self.physics,
                                        bl = Point(0,0),
                                        tr = Point(1,self.absolute.size.y)),

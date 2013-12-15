@@ -149,6 +149,9 @@ class PlayerArm(object):
         self.end_pos    = pos
         self.Update()
 
+    def Destroy(self):
+        self.quad.Delete()
+
 class FloatingFireExtinguisher(DynamicBox):
     texture_name = 'fire_extinguisher_side.png'
     def __init__(self,parent,fe,power):
@@ -416,14 +419,19 @@ class Player(DynamicBox):
                 self.throw_fire_extinguisher(pos)
         else:
             if button == globals.left_button:
-                if self.IsGrabbed():
+                if self.IsGrabbed() and self.push_start:
                     self.Push()
                 else:
                     obj = self.physics.GetObjectAtPoint(pos)
                     if obj and obj is not self:
                         self.Grab(obj,pos)
             elif button == globals.right_button:
-                self.Ungrab()
+                if self.push_start:
+                    #just cancel the push start
+                    self.push_start = None
+                    globals.game_view.mode.power_box.Disable()
+                else:
+                    self.Ungrab()
 
     def Grab(self,obj,pos):
         #First we need to decide if we're close enough to grab it
@@ -432,6 +440,7 @@ class Player(DynamicBox):
         phys_pos = pos*self.physics.scale_factor
         centre = self.body.position
         diff = phys_pos - Point(centre[0],centre[1])
+        print 'jim',diff.SquareLength()
         if diff.SquareLength() > self.stretching_arm_length:
             #Maybe waggle arms here?
             return
@@ -540,4 +549,12 @@ class Player(DynamicBox):
         intersection_point = self.body.GetWorldPoint((front-centre)*lam)
         shape.userData.body.ApplyForce(-normal*power,intersection_point) 
         #print 'force added!',normal*self.push_strength,centre
+
+
+    def Destroy(self):
+        self.Ungrab()
+        super(Player,self).Destroy()
+        for arm in self.arms:
+            arm.Destroy()
+        self.selected_quad.Delete()
 
