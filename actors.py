@@ -149,6 +149,30 @@ class PlayerArm(object):
         self.end_pos    = pos
         self.Update()
 
+class FloatingFireExtinguisher(DynamicBox):
+    texture_name = 'fire_extinguisher_side.png'
+    def __init__(self,parent,fe):
+        self.parent = parent
+        pos = Point(*self.parent.body.GetWorldPoint(fe.base_pos.to_vec()))/self.parent.physics.scale_factor
+        direction = fe.GetDirection()
+        self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
+        self.texture_coords = globals.atlas.TextureSpriteCoords(self.texture_name)
+        self.half_size = self.subimage.size*0.5
+        self.bl        = pos + self.half_size*Point(-1,0.3)
+        self.middle    = self.bl + self.half_size
+        self.tr        = self.middle + self.half_size
+        self.middle    = self.bl + self.half_size
+        super(FloatingFireExtinguisher,self).__init__(self.parent.physics,self.bl,self.tr,self.texture_coords)
+        #Add a force in the appropriate direction, as well as in the opposite direction on our player
+        fe.SetPositions()
+        thrust = 20
+        vector_fe = cmath.rect(thrust,direction)
+        vector_guy = cmath.rect(-thrust,direction)
+        bl_phys = fe.base_pos
+        bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
+        self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
+        self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
+
 class FireExtinguisher(object):
     z_level = 12
     texture_name = 'fire_extinguisher_held.png'
@@ -176,25 +200,31 @@ class FireExtinguisher(object):
         print 'stopped squirting'
 
     def SetPositions(self):
-        bl = Point(*self.shape.vertices[0])
-        tr = Point(*self.shape.vertices[2])
-        size = tr - bl
-        self.base_pos = bl + (size*Point(0.4,0.3))
-        self.hose_pos = bl + (size*Point(1.0,0.8))
+        #bl = Point(*self.shape.vertices[0])
+        #tr = Point(*self.shape.vertices[2])
+        #size = tr - bl
+        #self.base_pos = bl + (size*Point(0.4,0.3))
+        #self.hose_pos = bl + (size*Point(1.0,0.8))
+        centre = self.parent.body.position
+        angle  = self.parent.body.angle + (math.pi/2)
+        vector = cmath.rect(self.parent.midpoint[1]*1.1,self.GetDirection())
+        self.base_pos = Point(*self.parent.body.GetLocalPoint((centre[0] + vector.real,centre[1] + vector.imag)))
+        vector = cmath.rect(self.parent.midpoint[1]*1.5,self.GetDirection())
+        self.hose_pos = Point(*self.parent.body.GetLocalPoint((centre[0] + vector.real,centre[1] + vector.imag)))
         #self.base_pos = self.bl + self.half_size*Point(0.3,0.05)
         #self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
 
     def PhysUpdate(self):
         if self.squirting:
             thrust = -0.5
-            direction = self.parent.body.angle + self.angle + (math.pi/2)
-            vector = cmath.rect(thrust,direction)
-            print (vector.real,vector.imag),self.middle,self.parent.body.position
-            print 'a',self.bl,self.half_size,self.angle
+            vector = cmath.rect(thrust,self.GetDirection())
             self.parent.body.ApplyForce((vector.real,vector.imag),self.parent.body.GetWorldPoint(self.middle.to_vec()))
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
+
+    def GetDirection(self):
+        return self.parent.body.angle + self.angle + (math.pi/2)
             
     def Rotate(self,angle):
         self.angle = angle%(math.pi*2)
@@ -284,9 +314,10 @@ class Player(DynamicBox):
 
     def ResetFilters(self):
         #print 'resetting filters'
-        self.unset[0].shape.filter.groupIndex = 0
-        self.shape.filter.groupIndex = 0
-        self.unset = None
+        #self.unset[0].shape.filter.groupIndex = 0
+        #self.shape.filter.groupIndex = 0
+        #self.unset = None
+        pass
 
        # for i,vertex in enumerate(self.arm.vertices):
        #     screen_coords = Point(*self.body.GetWorldPoint(vertex))/self.physics.scale_factor
@@ -303,10 +334,18 @@ class Player(DynamicBox):
             self.selected_quad.Disable()
 
     def throw_fire_extinguisher(self,pos):
+        self.physics.contact_filter.thrown = (self,globals.time+1000)
         if not self.fire_extinguisher:
             return
         self.fire_extinguisher.Destroy()
-        globals.game_view.AddFireExtinguisher(self.body.GetWorldPoint(self.fire_extinguisher.base_pos.to_vec()))
+        #self.shape.filter.groupIndex = self.filter_group
+        #print self.shape.filter.groupIndex
+        fe = FloatingFireExtinguisher(self,self.fire_extinguisher)
+        #Need to have the fe and us not collide for a short while
+        
+        #self.unset = (fe,globals.time+5000)
+        globals.game_view.AddFireExtinguisher(fe)
+        
         self.fire_extinguisher = None
         self.current_hand_positions = self.resting_hand_positions
         for i in 0,1:
@@ -363,6 +402,11 @@ class Player(DynamicBox):
             return
         distance,angle = cmath.polar(complex(diff.x,diff.y))
         angle = (angle - (math.pi/2) - self.GetAngle())%(math.pi*2)
+        #You can catch a fire extinguisher from any angle
+        if isinstance(obj,FloatingFireExtinguisher):
+            print 'caught it!'
+            return
+
         if not (angle < self.grab_angle or (math.pi*2-angle) < self.grab_angle):
             return
         for shoulder in self.shoulders:
