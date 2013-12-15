@@ -171,6 +171,7 @@ class FloatingFireExtinguisher(DynamicBox):
         bl_phys = fe.base_pos
         bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
         self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
+        self.body.SetLinearVelocity(self.parent.body.GetLinearVelocity())
         self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
 
 class FireExtinguisher(object):
