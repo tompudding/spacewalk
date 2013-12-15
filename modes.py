@@ -228,6 +228,37 @@ class LevelOne(Mode):
 
     def ResetSceneThree(self):
         print 'scene3!'
+        self.current_scene = self.ResetSceneThree
+        for player in self.parent.players:
+            player.Destroy()
+        for item in self.items:
+            item.Destroy()
+        self.items = []
+        self.parent.players = []
+        self.fe_level.Enable()
+
+        pos = self.parent.absolute.size*Point(0.48,0.55)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = None))
+        pos = self.parent.absolute.size*Point(0.62,0.60)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = self.ResetSceneThree))
+        pos = self.parent.absolute.size*Point(0.485,0.68)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.FloatingFireExtinguisher(self.parent,
+                                                          fe = None,
+                                                          power = 1000,
+                                                          create_data = (pos,1000)))
+        self.items[-1].body.ApplyTorque(30)
+        self.parent.AddPlayer(Point(0.48,0.57),angle=math.pi)
+        self.parent.viewpos.pos = Point(687,1100)
+        self.parent.zoom = 1
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:

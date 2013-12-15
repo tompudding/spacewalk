@@ -139,6 +139,8 @@ class SaveBox(Debris):
 
     def __init__(self,physics,bl,tr,cb):
         self.cb = cb
+        if self.cb == None:
+            self.texture_name = 'debris_dull.png'
         self.triggered = False
         super(SaveBox,self).__init__(physics,bl,tr)
 
@@ -182,6 +184,7 @@ class PlayerArm(object):
 
 class FloatingFireExtinguisher(DynamicBox):
     texture_name = 'fire_extinguisher_side.png'
+    max_level = 1000
     def __init__(self,parent,fe,power,create_data = None):
         self.parent = parent
         if fe == None:
@@ -198,6 +201,7 @@ class FloatingFireExtinguisher(DynamicBox):
         self.tr        = self.middle + self.half_size
         self.middle    = self.bl + self.half_size
         super(FloatingFireExtinguisher,self).__init__(self.parent.physics,self.bl,self.tr,self.texture_coords)
+        globals.game_view.mode.fe_level.SetBarLevel(float(self.level)/self.max_level)
         #Add a force in the appropriate direction, as well as in the opposite direction on our player
         if fe != None:
             fe.SetPositions()
@@ -236,6 +240,7 @@ class FireExtinguisher(object):
         self.level     = self.max_level if level == None else level
         self.SetPositions()
         self.squirting = False
+        self.UpdateLevel(0)
 
     def Squirt(self):
         self.squirting = True
