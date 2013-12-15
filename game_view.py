@@ -284,6 +284,10 @@ class GameView(ui.RootElement):
         #self.music_playing = True
 
     def Draw(self):
+        #drawing.ResetState()
+        #drawing.Scale(self.zoom,self.zoom,1)
+        #drawing.Translate(-self.viewpos.pos.x*1,-self.viewpos.pos.y*1,0)
+        #drawing.DrawAll(globals.backdrop_buffer,self.backdrop_texture.texture)
         drawing.ResetState()
         drawing.Scale(self.zoom,self.zoom,1)
         drawing.Translate(-self.viewpos.pos.x,-self.viewpos.pos.y,0)

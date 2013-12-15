@@ -473,6 +473,8 @@ class Player(DynamicBox):
     def Ungrab(self):
         if not self.IsGrabbed():
             return
+        globals.game_view.mode.power_box.Disable()
+        self.push_start = None
         for joint in self.joints:
             self.physics.world.DestroyJoint(joint)
         self.joints = []
