@@ -340,6 +340,8 @@ class Player(DynamicBox):
         if self.selected:
             self.selected = False
             self.selected_quad.Disable()
+            globals.game_view.mode.power_box.Disable()
+            self.push_start = None
 
     def throw_fire_extinguisher(self,pos):
         self.physics.contact_filter.thrown = (self,globals.time+1000)

@@ -91,8 +91,8 @@ class GameMode(Mode):
         
         self.items = []
         self.power_box = ui.PowerBar(globals.screen_root,
-                                     pos = Point(0.8,0.1),
-                                     tr = Point(0.9,0.15),
+                                     pos = Point(0.45,0.1),
+                                     tr = Point(0.55,0.15),
                                      level = 0.6,
                                      bar_colour = drawing.constants.colours.red,
                                      border_colour = drawing.constants.colours.white)
