@@ -429,7 +429,6 @@ class PowerBar(UIElement):
         self.border.SetVertices(self.absolute.bottom_left,self.absolute.top_right)
 
     def SetBarLevel(self,level):
-        print level
         self.power_level = level
         if level < 0.3:
             self.quad.SetColour(self.low_power_colour)

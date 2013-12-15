@@ -163,9 +163,17 @@ class MyContactFilter(box2d.b2ContactFilter):
         if self.collide:
             return True
         if isinstance(shape1.userData,actors.SaveBox):
-            shape1.userData.SaveAction()
+            obj = shape2.userData
+            if isinstance(obj,actors.FireExtinguisher):
+                obj = obj.parent
+            if isinstance(obj,actors.Player):
+                shape1.userData.SaveAction(obj)
         elif isinstance(shape2.userData,actors.SaveBox):
-            shape2.userData.SaveAction()
+            obj = shape1.userData
+            if isinstance(obj,actors.FireExtinguisher):
+                obj = obj.parent
+            if isinstance(obj,actors.Player):
+                shape2.userData.SaveAction(obj)
             
         if self.thrown:
             #Fire extinguisher doesn't collide with the player who threw it for a while
@@ -341,6 +349,14 @@ class GameView(ui.RootElement):
         if len(self.players) == 1:
             player.Select()
             self.selected_player = player
+
+    def RemovePlayer(self,player):
+        self.players = [p for p in self.players if p is not player]
+        player.Destroy()
+        if self.selected_player is player:
+            self.selected_player = None
+            self.NextPlayer()
+        return
 
     def AddFireExtinguisher(self,fe):
         self.floating_objects.append(fe)

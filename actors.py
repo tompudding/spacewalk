@@ -14,7 +14,7 @@ class StaticBox(object):
     isBullet = False
     mass     = 1
     filter_group = None
-    static   = True
+    static   = False
     health   = 500
     z_level  = 10
     def __init__(self,physics,bl,tr,tc = None,angle=0):
@@ -65,6 +65,7 @@ class StaticBox(object):
             self.parent_joint = None
         self.shape.ClearUserData()
         self.physics.world.DestroyBody(self.body)
+        print 'destroyed body',self
         self.dead = True
         self.quad.Delete()
 
@@ -138,6 +139,10 @@ class SaveBox(Debris):
     texture_name = 'debris_save.png'
 
     def __init__(self,physics,bl,tr,cb):
+        self.players_to_remove = []
+        if cb != None:
+            #hack to make it hard to move them
+            self.mass = 100
         self.cb = cb
         if self.cb == None:
             self.texture_name = 'debris_dull.png'
@@ -146,16 +151,22 @@ class SaveBox(Debris):
 
     def PhysUpdate(self):
         super(SaveBox,self).PhysUpdate()
-        if self.cb != None and self.triggered:
-            func = self.cb
-            self.cb = None
-            func()
+        if self.cb != None:
+            for player in self.players_to_remove:
+                globals.game_view.RemovePlayer(player)
+            self.players_to_remove = []
+            if self.triggered:
+                func = self.cb
+                self.cb = None
+                func()
 
-    def SaveAction(self):
+    def SaveAction(self,player):
+        print 'Saveaction!'
         if self.cb != None and self.triggered == False:
             #This gets called inside the world step, which means bad things. Defer action until later
-            print 'Saveaction!'
-            self.triggered = True
+            self.players_to_remove.append(player)
+            if len(globals.game_view.players) == 1:
+                self.triggered = True
 
 class PlayerArm(object):
     z_level = 11
@@ -235,6 +246,7 @@ class FireExtinguisher(object):
         self.bl        = self.parent.midpoint*Point(0.3,2.4)-self.half_size
         self.middle    = self.bl + self.half_size
         self.shape     = self.parent.CreateShape(self.half_size,self.bl)
+        self.shape.userData = self
         self.shapeI    = self.parent.body.CreateShape(self.shape)
         self.angle     = 0
         self.level     = self.max_level if level == None else level
@@ -597,6 +609,7 @@ class Player(DynamicBox):
 
 
     def Destroy(self):
+        print 'player destroy!',self.dead
         if self.dead:
             return
         if self.fire_extinguisher:

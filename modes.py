@@ -193,6 +193,7 @@ class LevelOne(Mode):
 
     def ResetSceneTwo(self):
         self.current_scene = self.ResetSceneTwo
+        print 'reset scene two',len(self.parent.players)
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
@@ -227,38 +228,46 @@ class LevelOne(Mode):
         #self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
 
     def ResetSceneThree(self):
-        print 'scene3!'
         self.current_scene = self.ResetSceneThree
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
             item.Destroy()
+        for item in self.parent.floating_objects:
+            item.Destroy()
         self.items = []
         self.parent.players = []
         self.fe_level.Enable()
 
-        pos = self.parent.absolute.size*Point(0.48,0.55)
+        pos = self.parent.absolute.size*Point(0.38,0.57)
         obj = self.parent.atlas.SubimageSprite(self.save_name)
         self.items.append(actors.SaveBox(self.parent.physics,
                                          bl = pos,
                                          tr = pos + obj.size,
                                          cb = None))
-        pos = self.parent.absolute.size*Point(0.62,0.60)
+        pos = self.parent.absolute.size*Point(0.55,0.60)
         obj = self.parent.atlas.SubimageSprite(self.save_name)
         self.items.append(actors.SaveBox(self.parent.physics,
                                          bl = pos,
                                          tr = pos + obj.size,
-                                         cb = self.ResetSceneThree))
+                                         cb = self.ResetSceneFour))
+        pos = self.parent.absolute.size*Point(0.412,0.665)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.Debris(self.parent.physics,
+                                        bl = pos,
+                                        tr = pos + obj.size))
         pos = self.parent.absolute.size*Point(0.485,0.68)
         obj = self.parent.atlas.SubimageSprite(self.save_name)
-        self.items.append(actors.FloatingFireExtinguisher(self.parent,
-                                                          fe = None,
-                                                          power = 1000,
-                                                          create_data = (pos,1000)))
-        self.items[-1].body.ApplyTorque(30)
-        self.parent.AddPlayer(Point(0.48,0.57),angle=math.pi)
+
+        self.parent.AddPlayer(Point(0.385,0.595),True,angle=math.pi)
+        self.parent.AddPlayer(Point(0.43,0.67),angle=math.pi)
+        self.parent.players[-1].body.ApplyTorque(-80)
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
+
+    def ResetSceneFour(self):
+        print 'scene4!'
+        raise SystemExit
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:
