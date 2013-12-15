@@ -266,8 +266,45 @@ class LevelOne(Mode):
         self.parent.zoom = 1
 
     def ResetSceneFour(self):
-        print 'scene4!'
-        raise SystemExit
+        self.current_scene = self.ResetSceneFour
+        for player in self.parent.players:
+            player.Destroy()
+        for item in self.items:
+            item.Destroy()
+        for item in self.parent.floating_objects:
+            item.Destroy()
+        self.items = []
+        self.parent.players = []
+        self.fe_level.Enable()
+        self.fe_level.SetBarLevel(0.0)
+
+        pos = self.parent.absolute.size*Point(0.52,0.60)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = self.ResetSceneFive,
+                                         final = True))
+        pos = self.parent.absolute.size*Point(0.43,0.61)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.FloatingFireExtinguisher(self.parent,
+                                                          fe = None,
+                                                          power = 1000,
+                                                          create_data = (pos,1000)))
+        item = self.items[-1]
+        item.body.ApplyTorque(-15)
+        item.body.ApplyImpulse((0,0.1),item.body.position)
+
+        self.parent.AddPlayer(Point(0.44,0.60),angle=math.pi/2)
+        self.parent.AddPlayer(Point(0.43,0.60),angle=3*math.pi/2)
+        self.parent.viewpos.pos = Point(687,1100)
+        self.parent.zoom = 1
+
+    def ResetSceneFive(self):
+        print 'Gameover!'
+        self.help_box.Disable()
+        globals.game_view.mode = GameOver(self.parent)
+        self.current_scene = self.ResetSceneFive
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:
@@ -298,9 +335,13 @@ class LevelOne(Mode):
                 self.ResetSceneTwo()
             elif self.current_scene == self.ResetSceneTwo:
                 self.ResetSceneThree()
+            elif self.current_scene == self.ResetSceneThree:
+                self.ResetSceneFour()
+            elif self.current_scene == self.ResetSceneFour:
+                self.ResetSceneFive()
 
 class GameOver(Mode):
-    blurb = "GAME OVER"
+    blurb = "You made it to the ISS and back down to Earth, the sole survivor of the mysterious space calamity thing. Nameless other astronaut person will be remembered                                               Thanks for playing!"
     def __init__(self,parent):
         self.parent          = parent
         self.blurb           = self.blurb
@@ -313,8 +354,8 @@ class GameOver(Mode):
                                       tr     = Point(1,1),
                                       colour = (0,0,0,0.6))
         
-        bl = self.parent.GetRelative(Point(0,0))
-        tr = bl + self.parent.GetRelative(globals.screen)
+        bl = Point(0.3,0.5)
+        tr = Point(0.7,0.7)
         self.blurb_text = ui.TextBox(parent = globals.screen_root,
                                      bl     = bl         ,
                                      tr     = tr         ,

@@ -138,8 +138,9 @@ class Debris(DynamicBox):
 class SaveBox(Debris):
     texture_name = 'debris_save.png'
 
-    def __init__(self,physics,bl,tr,cb):
+    def __init__(self,physics,bl,tr,cb,final=False):
         self.players_to_remove = []
+        self.final = final
         if cb != None:
             #hack to make it hard to move them
             self.mass = 100
@@ -165,7 +166,7 @@ class SaveBox(Debris):
         if self.cb != None and self.triggered == False:
             #This gets called inside the world step, which means bad things. Defer action until later
             self.players_to_remove.append(player)
-            if len(globals.game_view.players) == 1:
+            if self.final or len(globals.game_view.players) == 1:
                 self.triggered = True
 
 class PlayerArm(object):
