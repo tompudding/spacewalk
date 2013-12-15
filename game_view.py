@@ -51,9 +51,15 @@ class MyContactListener(box2d.b2ContactListener):
 class MyContactFilter(box2d.b2ContactFilter):
     def __init__(self):
         self.thrown = None
+        self.pushed = None
+        self.collide = False
         super(MyContactFilter,self).__init__()
     def ShouldCollide(self, shape1, shape2):
+        #print 'cf',shape1
+        #print 'cf1',shape2
         # Implements the default behavior of b2ContactFilter in Python
+        if self.collide:
+            return True
         if self.thrown:
             #Fire extinguisher doesn't collide with the player who threw it for a while
             if globals.time > self.thrown[1]:
@@ -65,9 +71,18 @@ class MyContactFilter(box2d.b2ContactFilter):
             elif isinstance(shape2.userData,actors.FloatingFireExtinguisher) and shape1.userData is self.thrown[0]:
                 print 'skipped1'
                 return False
-        print 'collision!',shape1 == shape1.userData.shape#,shape2
+        if self.pushed:
+            print self.pushed,globals.time
+            if globals.time > self.pushed[2]:
+                self.pushed = None
+            elif shape1.userData is self.pushed[0] and shape2.userData is self.pushed[1] or \
+                    shape1.userData is self.pushed[1] and shape2.userData is self.pushed[0]:
+                print 'skipped2'
+                return False
+        #print 'collision!',shape1 == shape1.userData.shape#,shape2
         filter1 = shape1.filter
         filter2 = shape2.filter
+        #print filter1.groupIndex,filter2.groupIndex
         if filter1.groupIndex == filter2.groupIndex and filter1.groupIndex != 0:
             return filter1.groupIndex > 0
  

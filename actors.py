@@ -235,6 +235,7 @@ class FireExtinguisher(object):
         self.SetPositions()
 
     def Destroy(self):
+        self.shape.ClearUserData()
         self.parent.body.DestroyShape(self.shapeI)
         self.quad.Delete()
 
@@ -405,6 +406,8 @@ class Player(DynamicBox):
         #You can catch a fire extinguisher from any angle
         if isinstance(obj,FloatingFireExtinguisher):
             print 'caught it!'
+            obj.Destroy()
+            self.EquipFireExtinguisher()
             return
 
         if not (angle < self.grab_angle or (math.pi*2-angle) < self.grab_angle):
@@ -459,22 +462,29 @@ class Player(DynamicBox):
         cast_segment.p1 = centre
         cast_segment.p2 = front
 
-        lam, normal, shape = self.physics.world.RaycastOne(cast_segment,True,None)
+        print 'rc'
+        #This is a hack. My contact filtering messes up with rays, so turn it off for the duration of the ray cast
+        self.physics.contact_filter.collide = True
+        try:
+            lam, normal, shape = self.physics.world.RaycastOne(cast_segment,True,None)
+        finally:
+            self.physics.contact_filter.collide = False
+        print lam,normal,shape
         if shape == self.shapeI:
+            print '1'
             return
         if shape != obj.shapeI:
+            print '2'
             return
         if abs(normal[0]) < 0.5 and abs(normal[1]) < 0.5:
             #print 'updating normal!',normal
             normal = Point(*(centre-front))
             normal/=normal.length()
             normal = normal.to_vec()
-            
-        if self.unset:
-            self.ResetFilters()
-        obj.shape.filter.groupIndex = self.filter_group
-        self.shape.filter.groupIndex = self.filter_group
-        self.unset = (obj,globals.time + 500)
+
+        #self.physics.contact_filter.pushed = (self,obj,globals.time+500)
+        print self.physics.contact_filter.pushed
+
         self.body.ApplyForce(normal*self.push_strength,centre)
         intersection_point = self.body.GetWorldPoint((front-centre)*lam)
         shape.userData.body.ApplyForce(-normal*self.push_strength,intersection_point) 
