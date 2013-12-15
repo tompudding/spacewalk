@@ -2,4 +2,5 @@ resource/sprites/shuttle.png:tiles_atlas_0.png:0:425.0:114:87
 resource/sprites/debris.png:tiles_atlas_0.png:114:480.0:32:32
 resource/sprites/astronaut_body.png:tiles_atlas_0.png:146:498.0:23:14
 resource/sprites/selected.png:tiles_atlas_0.png:169:498.0:23:14
+resource/sprites/fire_extinguisher_side.png:tiles_atlas_0.png:114:461.0:11:19
 resource/sprites/fire_extinguisher_held.png:tiles_atlas_0.png:146:481.0:7:17

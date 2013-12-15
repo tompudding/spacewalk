@@ -156,13 +156,13 @@ class FireExtinguisher(object):
     max_angle = (math.pi*2)-min_angle
     def __init__(self,parent):
         self.parent = parent
-        self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
-        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
+        self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
+        self.quad      = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
-        self.bl = self.parent.midpoint*Point(0.3,2.4)-self.half_size
-        self.middle = self.bl + self.half_size
-        self.shape = self.parent.CreateShape(self.half_size,self.bl)
-        self.shapeI = self.parent.body.CreateShape(self.shape)
+        self.bl        = self.parent.midpoint*Point(0.3,2.4)-self.half_size
+        self.middle    = self.bl + self.half_size
+        self.shape     = self.parent.CreateShape(self.half_size,self.bl)
+        self.shapeI    = self.parent.body.CreateShape(self.shape)
         self.angle = 0
         self.SetPositions()
         self.squirting = False
@@ -204,11 +204,15 @@ class FireExtinguisher(object):
         self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),self.angle)
         self.SetPositions()
 
+    def Destroy(self):
+        self.parent.body.DestroyShape(self.shapeI)
+        self.quad.Delete()
+
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     texture_name_fe       = 'astronaut_body_fe.png'
     selected_name         = 'selected.png'
-    push_strength         = 300
+    push_strength         = 80
     stretching_arm_length = 1.5
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
@@ -299,7 +303,14 @@ class Player(DynamicBox):
             self.selected_quad.Disable()
 
     def throw_fire_extinguisher(self,pos):
-        print 'tfe'
+        if not self.fire_extinguisher:
+            return
+        self.fire_extinguisher.Destroy()
+        globals.game_view.AddFireExtinguisher(self.body.GetWorldPoint(self.fire_extinguisher.base_pos.to_vec()))
+        self.fire_extinguisher = None
+        self.current_hand_positions = self.resting_hand_positions
+        for i in 0,1:
+            self.arms[i].SetHand(self,self.current_hand_positions[i])
 
     def MouseMotion(self,pos,rel):
         #print pos

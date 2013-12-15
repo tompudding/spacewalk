@@ -173,6 +173,9 @@ class GameView(ui.RootElement):
             player.Select()
             self.selected_player = player
 
+    def AddFireExtinguisher(self,pos):
+        print 'a'
+
     def MouseMotion(self,pos,rel,handled):
         #print 'mouse',pos
         #if self.selected_player != None:
