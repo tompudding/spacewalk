@@ -169,6 +169,9 @@ class SaveBox(Debris):
             if self.final or len(globals.game_view.players) == 1:
                 self.triggered = True
 
+class ISS(SaveBox):
+    texture_name = 'shuttle.png'
+
 class PlayerArm(object):
     z_level = 11
     def __init__(self,parent,start,end):
@@ -254,6 +257,9 @@ class Squirt(object):
         self.quad.SetColour((1,1,1,1-partial**2))
         return True
 
+    def Destroy(self):
+        self.quad.Delete()
+
 class FireExtinguisher(object):
     z_level = 12
     texture_name = 'fire_extinguisher_held.png'
@@ -285,10 +291,12 @@ class FireExtinguisher(object):
     def Squirt(self):
         self.squirting = True
         print 'squirting'
+        globals.sounds.psh.play()
 
     def StopSquirting(self):
         self.squirting = False
         print 'stopped squirting'
+        globals.sounds.psh.stop()
 
     def SetPositions(self):
         #bl = Point(*self.shape.vertices[0])
@@ -352,6 +360,8 @@ class FireExtinguisher(object):
 
     def Destroy(self):
         if not self.dead:
+            for squirter in self.squirters:
+                squirter.Destroy()
             self.shape.ClearUserData()
             self.parent.body.DestroyShape(self.shapeI)
             self.quad.Delete()
@@ -360,7 +370,7 @@ class FireExtinguisher(object):
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     texture_name_fe       = 'astronaut_body_fe.png'
-    selected_name         = 'selected.png'
+    selected_name         = 'astronaut_selected.png'
     push_strength         = 200
     throw_strength         = 100
     stretching_arm_length = 1.5
@@ -411,14 +421,6 @@ class Player(DynamicBox):
     #     arm_midpoint = (arm_tr - arm_bl)
     #     self.arm = self.CreateShape(arm_midpoint,arm_bl)
     #     self.armI = self.body.CreateShape(self.arm)
-        
-    def InitPolygons(self,tc):
-        super(Player,self).InitPolygons(tc)
-        #The selected quad uses different tcs...
-        #self.arm_quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords('debris.png'))
-        self.selected_quad = drawing.Quad(globals.quad_buffer,tc = self.selected_texture_coords)
-        if not self.selected:
-            self.selected_quad.Disable()
 
     def PhysUpdate(self):
         if self.dead:
@@ -428,7 +430,6 @@ class Player(DynamicBox):
         centre = Point(*self.body.GetWorldPoint([0,0]))/self.physics.scale_factor
         bl = centre - (self.selected_subimage.size/2)
         tr = bl + self.selected_subimage.size
-        self.selected_quad.SetVertices(bl,tr,20)
         if self.push_start != None:
             level = float(globals.time - self.push_start)/self.max_push_duration
             if level <= 1.0:
@@ -455,12 +456,12 @@ class Player(DynamicBox):
     def Select(self):
         if not self.selected:
             self.selected = True
-            self.selected_quad.Enable()
+            self.quad.SetTextureCoordinates(self.selected_texture_coords)
 
     def Unselect(self):
         if self.selected:
             self.selected = False
-            self.selected_quad.Disable()
+            self.quad.SetTextureCoordinates(self.texture_coords)
             globals.game_view.mode.power_box.Disable()
             self.push_start = None
 
@@ -544,6 +545,7 @@ class Player(DynamicBox):
             return
         distance,angle = cmath.polar(complex(diff.x,diff.y))
         angle = (angle - (math.pi/2) - self.GetAngle())%(math.pi*2)
+        globals.sounds.grab.play()
         #You can catch a fire extinguisher from any angle
         if isinstance(obj,FloatingFireExtinguisher):
             print 'caught it!'
@@ -659,6 +661,5 @@ class Player(DynamicBox):
         super(Player,self).Destroy()
         for arm in self.arms:
             arm.Destroy()
-        self.selected_quad.Delete()
         self.dead = True
 

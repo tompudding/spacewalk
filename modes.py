@@ -87,10 +87,12 @@ class LevelOne(Mode):
     shuttle_name = 'shuttle.png'
     debris_name  = 'debris.png'
     save_name  = 'debris_save.png'
+    iss_name = 'shuttle.png'
     def __init__(self,parent):
         self.parent = parent
         
         self.items = []
+        self.played_sounds = [False]*10
         self.power_box = ui.PowerBar(globals.screen_root,
                                      pos = Point(0.45,0.05),
                                      tr = Point(0.55,0.1),
@@ -158,6 +160,9 @@ class LevelOne(Mode):
         self.current_scene()
 
     def ResetSceneOne(self):
+        if not self.played_sounds[0]:
+            globals.sounds.calamity.play()
+            self.played_sounds[0] = True
         self.current_scene = self.ResetSceneOne
         for player in self.parent.players:
             player.Destroy()
@@ -193,6 +198,10 @@ class LevelOne(Mode):
 
     def ResetSceneTwo(self):
         self.current_scene = self.ResetSceneTwo
+        globals.sounds.calamity.stop()
+        if not self.played_sounds[1]:
+            globals.sounds.fe.play()
+            self.played_sounds[1] = True
         print 'reset scene two',len(self.parent.players)
         for player in self.parent.players:
             player.Destroy()
@@ -229,6 +238,10 @@ class LevelOne(Mode):
 
     def ResetSceneThree(self):
         self.current_scene = self.ResetSceneThree
+        globals.sounds.fe.stop()
+        if not self.played_sounds[2]:
+            globals.sounds.spaceman.play()
+            self.played_sounds[2] = True
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
@@ -267,6 +280,10 @@ class LevelOne(Mode):
 
     def ResetSceneFour(self):
         self.current_scene = self.ResetSceneFour
+        globals.sounds.spaceman.stop()
+        if not self.played_sounds[3]:
+            globals.sounds.iss.play()
+            self.played_sounds[3] = True
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
@@ -275,14 +292,12 @@ class LevelOne(Mode):
             item.Destroy()
         self.items = []
         self.parent.players = []
-        self.fe_level.Enable()
-        self.fe_level.SetBarLevel(0.0)
 
         pos = self.parent.absolute.size*Point(0.52,0.60)
-        obj = self.parent.atlas.SubimageSprite(self.save_name)
-        self.items.append(actors.SaveBox(self.parent.physics,
+        obj = self.parent.atlas.SubimageSprite(self.iss_name)
+        self.items.append(actors.ISS(self.parent.physics,
                                          bl = pos,
-                                         tr = pos + obj.size,
+                                         tr = pos + obj.size*2,
                                          cb = self.ResetSceneFive,
                                          final = True))
         pos = self.parent.absolute.size*Point(0.43,0.61)
@@ -292,6 +307,8 @@ class LevelOne(Mode):
                                                           power = 1000,
                                                           create_data = (pos,1000)))
         item = self.items[-1]
+        self.fe_level.Enable()
+        self.fe_level.SetBarLevel(0.0)
         item.body.ApplyTorque(-15)
         item.body.ApplyImpulse((0,0.1),item.body.position)
 
@@ -303,6 +320,7 @@ class LevelOne(Mode):
 
     def ResetSceneFive(self):
         print 'Gameover!'
+        globals.sounds.iss.stop()
         self.help_box.Disable()
         globals.game_view.mode = GameOver(self.parent)
         self.current_scene = self.ResetSceneFive
@@ -342,7 +360,7 @@ class LevelOne(Mode):
                 self.ResetSceneFive()
 
 class GameOver(Mode):
-    blurb = "You made it to the ISS and back down to Earth, the sole survivor of the mysterious space calamity thing. Nameless other astronaut person will be remembered                                               Thanks for playing!"
+    blurb = "You made it to the ISS and back down to Earth, the sole survivor of the mysterious space calamity thing. Dr. Spaceman will be remembered.                                               Thanks for playing!"
     def __init__(self,parent):
         self.parent          = parent
         self.blurb           = self.blurb

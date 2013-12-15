@@ -137,6 +137,7 @@ class MyContactListener(box2d.b2ContactListener):
         cp.position = point.position.copy()
         cp.normal   = point.normal.copy()
         cp.id       = point.id
+        #globals.sounds.thud.play()
         self.physics.contacts.append(cp)
         
     def Persist(self, point):
