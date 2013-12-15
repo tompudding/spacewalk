@@ -88,8 +88,14 @@ class GameMode(Mode):
     debris_name  = 'debris.png'
     def __init__(self,parent):
         self.parent = parent
-        #try adding a box in the middle of the screen for fun
+        
         self.items = []
+        self.power_box = ui.PowerBar(globals.screen_root,
+                                     pos = Point(0.8,0.1),
+                                     tr = Point(0.9,0.15),
+                                     level = 0.6,
+                                     bar_colour = drawing.constants.colours.red,
+                                     border_colour = drawing.constants.colours.white)
         for name,pos in ((self.shuttle_name,self.parent.absolute.size*0.4),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.3)),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.6)),

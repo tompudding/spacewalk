@@ -409,6 +409,48 @@ class Box(UIElement):
 class HoverableBox(Box,HoverableElement):
     pass
 
+class PowerBar(UIElement):
+    def __init__(self,parent,pos,tr,level,bar_colour,border_colour):
+        super(PowerBar,self).__init__(parent,pos,tr)
+        self.colour = bar_colour
+        self.border = drawing.QuadBorder(globals.ui_buffer,line_width = 1)
+        self.border_colour = border_colour
+        self.border.SetColour(self.border_colour)
+        self.quad = drawing.Quad(globals.ui_buffer)
+        self.quad.SetColour(self.colour)
+        self.power_level = level
+        self.UpdatePosition()
+        self.Enable()
+
+    def UpdatePosition(self):
+        super(PowerBar,self).UpdatePosition()
+        self.SetBarLevel(self.power_level)
+        self.border.SetVertices(self.absolute.bottom_left,self.absolute.top_right)
+
+    def SetBarLevel(self,level):
+        self.level = level
+        size = self.absolute.top_right-self.absolute.bottom_left
+        tr = self.absolute.bottom_left + size*Point(self.level,1)
+        self.quad.SetVertices(self.absolute.bottom_left,tr,drawing.constants.DrawLevels.ui)
+
+    def Delete(self):
+        super(PowerBar,self).Delete()
+        self.quad.Delete()
+        self.border.Delete()
+        
+    def Disable(self):
+        if self.enabled:
+            self.quad.Disable()
+            self.border.Disable()
+        super(PowerBar,self).Disable()
+
+    def Enable(self):
+        if not self.enabled:
+            self.quad.Enable()
+            self.border.Enable()
+        super(PowerBar,self).Enable()
+
+
 class TextBox(UIElement):
     """ A Screen-relative text box wraps text to a given size """
     def __init__(self,parent,bl,tr,text,scale,colour = None,textType = drawing.texture.TextTypes.SCREEN_RELATIVE,alignment = drawing.texture.TextAlignments.LEFT):
