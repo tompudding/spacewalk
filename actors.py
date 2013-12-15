@@ -231,6 +231,28 @@ class FloatingFireExtinguisher(DynamicBox):
             self.parent.body.ApplyImpulse(impulse,self.parent.body.position)
             self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
         
+class Squirt(object):
+    def __init__(self,start,vector,duration):
+        self.start_pos = start
+        self.vector = vector
+        self.duration = duration
+        self.start_time = globals.time
+        self.end_time = self.start_time + duration
+        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords("debris.png"))
+
+    def Update(self):
+        if globals.time > self.end_time:
+            print 'killing squirter'
+            self.quad.Delete()
+            return False
+        partial = float(globals.time-self.start_time)/self.duration
+        vector = self.vector*partial
+        size = Point(32.0,32.0)*partial
+        bl = self.start_pos + vector - (size*0.5)
+        tr = bl + size
+        self.quad.SetVertices(bl,tr,20)
+        self.quad.SetColour((1,1,1,1-partial**2))
+        return True
 
 class FireExtinguisher(object):
     z_level = 12
@@ -238,6 +260,9 @@ class FireExtinguisher(object):
     min_angle = 1.5
     max_angle = (math.pi*2)-min_angle
     max_level = 1000
+    squirt_range = 0.9
+    min_squirt_distance = 30
+    squirt_distance = 50
     def __init__(self,parent,level = None):
         self.parent = parent
         self.dead = False
@@ -251,6 +276,8 @@ class FireExtinguisher(object):
         self.shapeI    = self.parent.body.CreateShape(self.shape)
         self.angle     = 0
         self.level     = self.max_level if level == None else level
+        self.squirters = []
+        self.last_squirt_quad = None
         self.SetPositions()
         self.squirting = False
         self.UpdateLevel(0)
@@ -294,7 +321,20 @@ class FireExtinguisher(object):
                 return
             thrust = -0.5
             vector = cmath.rect(thrust,self.GetDirection())
+            point_phys = self.parent.body.GetWorldPoint(self.middle.to_vec())
+            point_screen = Point(*point_phys)/self.parent.physics.scale_factor
+                                                        
             self.parent.body.ApplyForce((vector.real,vector.imag),self.parent.body.GetWorldPoint(self.middle.to_vec()))
+            if len(self.squirters) < 100:
+                angle = self.GetDirection() + (random.random()-0.5)*self.squirt_range
+                distance = random.random()*self.squirt_distance + self.min_squirt_distance
+                vector = cmath.rect(distance,angle)
+                vector = Point(vector.real,vector.imag)
+                start = point_screen
+                self.squirters.append(Squirt(start,vector,1000))
+        #Always update the squirters even if not squirting
+        self.squirters = [squirt for squirt in self.squirters if squirt.Update() == True]
+                
         for i,vertex in enumerate(self.shape.vertices):
             screen_coords = Point(*self.parent.body.GetWorldPoint(vertex))/self.parent.physics.scale_factor
             self.quad.vertex[self.parent.vertex_permutation[i]] = (screen_coords.x,screen_coords.y,self.z_level)
