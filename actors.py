@@ -17,7 +17,7 @@ class StaticBox(object):
     static   = True
     health   = 500
     z_level  = 10
-    def __init__(self,physics,bl,tr,tc = None):
+    def __init__(self,physics,bl,tr,tc = None,angle=0):
         #Hardcode the dirt texture since right now all static things are dirt. I know I know.
         self.dead = False
         self.tc = tc
@@ -34,6 +34,7 @@ class StaticBox(object):
         self.bodydef.allowSleep = False
         self.midpoint = (tr - bl)*0.5*physics.scale_factor
         self.bodydef.position = tuple((bl*physics.scale_factor) + self.midpoint)
+        self.bodydef.angle = angle
         self.shape = self.CreateShape(self.midpoint)
         if not self.static:
             self.shape.userData = self
@@ -102,8 +103,8 @@ class DynamicBox(StaticBox):
     static = False
     health = 30
     vertex_permutation = (0,3,2,1)
-    def __init__(self,physics,bl,tr,tc):
-        super(DynamicBox,self).__init__(physics,bl,tr,tc)
+    def __init__(self,physics,bl,tr,tc,angle=0):
+        super(DynamicBox,self).__init__(physics,bl,tr,tc,angle)
 
         self.body.SetMassFromShapes()
         physics.AddObject(self)
@@ -149,9 +150,9 @@ class SaveBox(Debris):
             func()
 
     def SaveAction(self):
-        print 'Saveaction!'
         if self.cb != None and self.triggered == False:
             #This gets called inside the world step, which means bad things. Defer action until later
+            print 'Saveaction!'
             self.triggered = True
 
 class PlayerArm(object):
@@ -181,11 +182,14 @@ class PlayerArm(object):
 
 class FloatingFireExtinguisher(DynamicBox):
     texture_name = 'fire_extinguisher_side.png'
-    def __init__(self,parent,fe,power):
+    def __init__(self,parent,fe,power,create_data = None):
         self.parent = parent
-        pos = Point(*self.parent.body.GetWorldPoint(fe.base_pos.to_vec()))/self.parent.physics.scale_factor
-        direction = fe.GetDirection()
-        self.level = fe.level
+        if fe == None:
+            pos,self.level = create_data
+        else:
+            pos = Point(*self.parent.body.GetWorldPoint(fe.base_pos.to_vec()))/self.parent.physics.scale_factor
+            direction = fe.GetDirection()
+            self.level = fe.level
         self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords = globals.atlas.TextureSpriteCoords(self.texture_name)
         self.half_size = self.subimage.size*0.5
@@ -195,20 +199,21 @@ class FloatingFireExtinguisher(DynamicBox):
         self.middle    = self.bl + self.half_size
         super(FloatingFireExtinguisher,self).__init__(self.parent.physics,self.bl,self.tr,self.texture_coords)
         #Add a force in the appropriate direction, as well as in the opposite direction on our player
-        fe.SetPositions()
-        thrust = power
-        vector_fe = cmath.rect(thrust,direction)
-        vector_guy = cmath.rect(-thrust,direction)
-        bl_phys = fe.base_pos
-        bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
-        print vector_guy.real,vector_guy.imag,bl_world,self.parent.body.position
-        self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
-        self.body.SetLinearVelocity(self.parent.body.GetLinearVelocity())
-        #Now let's apply the impulse to counteract that velocity we've just imparted
-        momentum = -(self.parent.body.GetLinearVelocity()*self.body.GetMass())
-        impulse = momentum/self.parent.body.GetMass()
-        self.parent.body.ApplyImpulse(impulse,self.parent.body.position)
-        self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
+        if fe != None:
+            fe.SetPositions()
+            thrust = power
+            vector_fe = cmath.rect(thrust,direction)
+            vector_guy = cmath.rect(-thrust,direction)
+            bl_phys = fe.base_pos
+            bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
+            print vector_guy.real,vector_guy.imag,bl_world,self.parent.body.position
+            self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
+            self.body.SetLinearVelocity(self.parent.body.GetLinearVelocity())
+            #Now let's apply the impulse to counteract that velocity we've just imparted
+            momentum = -(self.parent.body.GetLinearVelocity()*self.body.GetMass())
+            impulse = momentum/self.parent.body.GetMass()
+            self.parent.body.ApplyImpulse(impulse,self.parent.body.position)
+            self.body.ApplyForce((vector_fe.real,vector_fe.imag),bl_world)
         
 
 class FireExtinguisher(object):
@@ -302,7 +307,7 @@ class Player(DynamicBox):
     z_level               = 12
     filter_id             = -1
     max_push_duration     = 2000
-    def __init__(self,physics,bl):
+    def __init__(self,physics,bl,angle=0):
         self.arms              = []
         self.selected          = False
         self.unset             = None
@@ -314,7 +319,7 @@ class Player(DynamicBox):
         self.selected_subimage = globals.atlas.SubimageSprite(self.selected_name)
         self.selected_texture_coords = globals.atlas.TextureSpriteCoords(self.selected_name)
         tr                     = bl + self.subimage.size
-        super(Player,self).__init__(physics,bl,tr,self.texture_coords)
+        super(Player,self).__init__(physics,bl,tr,self.texture_coords,angle)
         self.joints    = []
         self.other_obj = None
         self.filter_group = Player.filter_id

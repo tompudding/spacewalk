@@ -332,9 +332,9 @@ class GameView(ui.RootElement):
                 pygame.mixer.music.set_volume(1)
         self.mode.KeyUp(key)
 
-    def AddPlayer(self,pos,fire_extinguisher = False):
+    def AddPlayer(self,pos,fire_extinguisher = False,angle=0):
         bl = self.absolute.size*pos
-        player = actors.Player(self.physics,bl)
+        player = actors.Player(self.physics,bl,angle)
         if fire_extinguisher:
             player.EquipFireExtinguisher()
         self.players.append(player)
