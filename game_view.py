@@ -209,6 +209,7 @@ class Physics(object):
         self.timeStep = 1.0 / 60.0
         self.velocityIterations = 10
         self.positionIterations = 8
+        self.max_zoom = 2.0
         self.objects = []
     
     def AddObject(self,obj):
@@ -243,6 +244,8 @@ class GameView(ui.RootElement):
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
         self.game_over = False
         self.dragging = None
+        self.max_zoom = 2.0
+        self.min_zoom = 0.5
         self.backdrop_texture = drawing.texture.Texture('starfield.png')
         #pygame.mixer.music.load('music.ogg')
         #self.music_playing = False
@@ -384,8 +387,11 @@ class GameView(ui.RootElement):
         pos_coords = self.viewpos.Get() + (pos/self.zoom)
         oldzoom = self.zoom
         self.zoom -= (amount/10.0)
-        if self.zoom > 4:
-            self.zoom = 4
+        if self.zoom < self.min_zoom:
+            self.zoom = self.min_zoom
+        if self.zoom > self.max_zoom:
+            self.zoom = self.max_zoom
+        print self.zoom
         
         #if we've zoomed so far out that we can see an edge of the screen, fix that
         top_left= Point(0,globals.screen.y/self.zoom)
@@ -406,6 +412,7 @@ class GameView(ui.RootElement):
 
         if new_top_right.x > self.absolute.size.x:
             new_viewpos.x -= (new_top_right.x - self.absolute.size.x)
+        print 'a',new_viewpos
         
         try:
             if new_viewpos.y < 0:
@@ -429,6 +436,7 @@ class GameView(ui.RootElement):
 
         new_pos_coords = self.viewpos.Get() + pos/self.zoom
         self.viewpos.Set(self.viewpos.Get() + (pos_coords - new_pos_coords))
+        self.ClampViewpos()
 
     def ClampViewpos(self):
         if self.viewpos.pos.x < 0:
