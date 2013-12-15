@@ -36,6 +36,8 @@ class ShapeBuffer(object):
             out = self.vacant.pop()
             for i in xrange(self.num_points):
                 self.indices[out+i] = out+i
+                for j in xrange(4):
+                    self.colour_data[out+i][j] = 1
             return out
             
         out = self.current_size

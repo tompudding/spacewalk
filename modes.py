@@ -299,6 +299,7 @@ class LevelOne(Mode):
         self.parent.AddPlayer(Point(0.43,0.60),angle=3*math.pi/2)
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
+        
 
     def ResetSceneFive(self):
         print 'Gameover!'
