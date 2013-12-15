@@ -96,6 +96,7 @@ class GameMode(Mode):
                                      level = 0.6,
                                      bar_colour = drawing.constants.colours.red,
                                      border_colour = drawing.constants.colours.white)
+        self.power_box.Disable()
         for name,pos in ((self.shuttle_name,self.parent.absolute.size*0.4),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.3)),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.6)),

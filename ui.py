@@ -410,6 +410,9 @@ class HoverableBox(Box,HoverableElement):
     pass
 
 class PowerBar(UIElement):
+    low_power_colour = drawing.constants.colours.green
+    medium_power_colour = drawing.constants.colours.yellow
+    high_power_colour = drawing.constants.colours.red
     def __init__(self,parent,pos,tr,level,bar_colour,border_colour):
         super(PowerBar,self).__init__(parent,pos,tr)
         self.colour = bar_colour
@@ -428,9 +431,16 @@ class PowerBar(UIElement):
         self.border.SetVertices(self.absolute.bottom_left,self.absolute.top_right)
 
     def SetBarLevel(self,level):
-        self.level = level
+        print level
+        self.power_level = level
+        if level < 0.3:
+            self.quad.SetColour(self.low_power_colour)
+        elif level < 0.7:
+            self.quad.SetColour(self.medium_power_colour)
+        else:
+            self.quad.SetColour(self.high_power_colour)
         size = self.absolute.top_right-self.absolute.bottom_left
-        tr = self.absolute.bottom_left + size*Point(self.level,1)
+        tr = self.absolute.bottom_left + size*Point(self.power_level,1)
         self.quad.SetVertices(self.absolute.bottom_left,tr,drawing.constants.DrawLevels.ui)
 
     def Delete(self):

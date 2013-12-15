@@ -244,18 +244,20 @@ class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
     texture_name_fe       = 'astronaut_body_fe.png'
     selected_name         = 'selected.png'
-    push_strength         = 80
+    push_strength         = 200
     stretching_arm_length = 1.5
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
     grab_angle            = 1.5
     z_level               = 12
     filter_id             = -1
+    max_push_duration     = 2000
     def __init__(self,physics,bl):
         self.arms              = []
         self.selected          = False
         self.unset             = None
         self.fire_extinguisher = None
+        self.push_start        = None
         self.squirting         = False
         self.subimage          = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords    = globals.atlas.TextureSpriteCoords(self.texture_name)
@@ -306,6 +308,10 @@ class Player(DynamicBox):
         bl = centre - (self.selected_subimage.size/2)
         tr = bl + self.selected_subimage.size
         self.selected_quad.SetVertices(bl,tr,20)
+        if self.push_start != None:
+            level = float(globals.time - self.push_start)/self.max_push_duration
+            if level <= 1.0:
+                globals.game_view.mode.power_box.SetBarLevel(level)
         for arm in self.arms:
             arm.Update()
         if self.unset and globals.time >= self.unset[1]:
@@ -444,11 +450,19 @@ class Player(DynamicBox):
     def PreparePush(self):
         if not self.IsGrabbed():
             return
+        globals.game_view.mode.power_box.Enable()
+        globals.game_view.mode.power_box.SetBarLevel(0)
+        self.push_start = globals.time
         for joint in self.joints:
             joint.length = self.pushing_arm_length
         #print 'prepare push'
 
     def Push(self):
+        power = ((globals.game_view.mode.power_box.power_level)**2)*self.push_strength
+        print globals.game_view.mode.power_box.power_level,power
+        globals.game_view.mode.power_box.Disable()
+        
+        self.push_start = None
         if not self.IsGrabbed():
             return
         obj = self.other_obj
@@ -463,19 +477,15 @@ class Player(DynamicBox):
         cast_segment.p1 = centre
         cast_segment.p2 = front
 
-        print 'rc'
         #This is a hack. My contact filtering messes up with rays, so turn it off for the duration of the ray cast
         self.physics.contact_filter.collide = True
         try:
             lam, normal, shape = self.physics.world.RaycastOne(cast_segment,True,None)
         finally:
             self.physics.contact_filter.collide = False
-        print lam,normal,shape
         if shape == self.shapeI:
-            print '1'
             return
         if shape != obj.shapeI:
-            print '2'
             return
         if abs(normal[0]) < 0.5 and abs(normal[1]) < 0.5:
             #print 'updating normal!',normal
@@ -484,10 +494,9 @@ class Player(DynamicBox):
             normal = normal.to_vec()
 
         #self.physics.contact_filter.pushed = (self,obj,globals.time+500)
-        print self.physics.contact_filter.pushed
-
-        self.body.ApplyForce(normal*self.push_strength,centre)
+        print power
+        self.body.ApplyForce(normal*power,centre)
         intersection_point = self.body.GetWorldPoint((front-centre)*lam)
-        shape.userData.body.ApplyForce(-normal*self.push_strength,intersection_point) 
+        shape.userData.body.ApplyForce(-normal*power,intersection_point) 
         #print 'force added!',normal*self.push_strength,centre
 
