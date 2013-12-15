@@ -56,7 +56,7 @@ class ShapeBuffer(object):
         self.current_size = n
         for i in xrange(self.size*self.num_points):
             self.indices[i] = i
-        self.vacant = []
+        self.vacant = set()
 
     def RemoveShape(self,index):
         """

@@ -66,7 +66,7 @@ class StaticBox(object):
         self.shape.ClearUserData()
         self.physics.world.DestroyBody(self.body)
         self.dead = True
-        self.quad.Disable()
+        self.quad.Delete()
 
     def Damage(self,amount):
         #can't damage static stuff
@@ -224,6 +224,7 @@ class FireExtinguisher(object):
     max_level = 1000
     def __init__(self,parent,level = None):
         self.parent = parent
+        self.dead = False
         self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
         self.quad      = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
         self.half_size = self.subimage.size*0.5*self.parent.physics.scale_factor
@@ -267,6 +268,8 @@ class FireExtinguisher(object):
         return True
 
     def PhysUpdate(self):
+        if self.dead:
+            return
         if self.squirting:
             if not self.UpdateLevel(-1):
                 self.StopSquirting()
@@ -290,9 +293,11 @@ class FireExtinguisher(object):
         self.SetPositions()
 
     def Destroy(self):
-        self.shape.ClearUserData()
-        self.parent.body.DestroyShape(self.shapeI)
-        self.quad.Delete()
+        if not self.dead:
+            self.shape.ClearUserData()
+            self.parent.body.DestroyShape(self.shapeI)
+            self.quad.Delete()
+            self.dead = True
 
 class Player(DynamicBox):
     texture_name          = 'astronaut_body.png'
@@ -308,6 +313,7 @@ class Player(DynamicBox):
     filter_id             = -1
     max_push_duration     = 2000
     def __init__(self,physics,bl,angle=0):
+        self.dead              = False
         self.arms              = []
         self.selected          = False
         self.unset             = None
@@ -357,6 +363,8 @@ class Player(DynamicBox):
             self.selected_quad.Disable()
 
     def PhysUpdate(self):
+        if self.dead:
+            return
         super(Player,self).PhysUpdate()
         #Now update the position of the selected quad. No need to rotate it as it's a circle
         centre = Point(*self.body.GetWorldPoint([0,0]))/self.physics.scale_factor
@@ -584,9 +592,14 @@ class Player(DynamicBox):
 
 
     def Destroy(self):
+        if self.dead:
+            return
+        if self.fire_extinguisher:
+            self.fire_extinguisher.Destroy()
         self.Ungrab()
         super(Player,self).Destroy()
         for arm in self.arms:
             arm.Destroy()
         self.selected_quad.Delete()
+        self.dead = True
 
