@@ -410,18 +410,16 @@ class HoverableBox(Box,HoverableElement):
     pass
 
 class PowerBar(UIElement):
-    low_power_colour = drawing.constants.colours.green
-    medium_power_colour = drawing.constants.colours.yellow
-    high_power_colour = drawing.constants.colours.red
-    def __init__(self,parent,pos,tr,level,bar_colour,border_colour):
+    def __init__(self,parent,pos,tr,level,bar_colours,border_colour):
         super(PowerBar,self).__init__(parent,pos,tr)
-        self.colour = bar_colour
-        self.border = drawing.QuadBorder(globals.ui_buffer,line_width = 1)
-        self.border_colour = border_colour
+        self.low_power_colour    = bar_colours[0]
+        self.medium_power_colour = bar_colours[1]
+        self.high_power_colour   = bar_colours[2]
+        self.border              = drawing.QuadBorder(globals.ui_buffer,line_width = 1)
+        self.border_colour       = border_colour
         self.border.SetColour(self.border_colour)
-        self.quad = drawing.Quad(globals.ui_buffer)
-        self.quad.SetColour(self.colour)
-        self.power_level = level
+        self.quad                = drawing.Quad(globals.ui_buffer)
+        self.power_level         = level
         self.UpdatePosition()
         self.Enable()
 

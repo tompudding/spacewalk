@@ -91,12 +91,28 @@ class GameMode(Mode):
         
         self.items = []
         self.power_box = ui.PowerBar(globals.screen_root,
-                                     pos = Point(0.45,0.1),
-                                     tr = Point(0.55,0.15),
+                                     pos = Point(0.45,0.05),
+                                     tr = Point(0.55,0.1),
                                      level = 0.6,
-                                     bar_colour = drawing.constants.colours.red,
+                                     bar_colours = (drawing.constants.colours.green,
+                                                    drawing.constants.colours.yellow,
+                                                    drawing.constants.colours.red),
                                      border_colour = drawing.constants.colours.white)
+        self.fe_level = ui.PowerBar(globals.screen_root,
+                                    pos = Point(0.8,0.05),
+                                    tr = Point(0.9,0.1),
+                                    level = 1.0,
+                                    bar_colours = (drawing.constants.colours.red,
+                                                    drawing.constants.colours.yellow,
+                                                    drawing.constants.colours.green),
+                                    border_colour = drawing.constants.colours.white)
+        self.fe_level.title = ui.TextBox(parent = self.fe_level,
+                                         bl     = Point(-0.03,1.0),
+                                         tr     = Point(1.1,1.5)    ,
+                                         text   = 'Foam Level',
+                                         scale  = 3)
         self.power_box.Disable()
+        self.fe_level.Enable()
         for name,pos in ((self.shuttle_name,self.parent.absolute.size*0.4),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.3)),
                          (self.debris_name,self.parent.absolute.size*Point(0.3,0.6)),

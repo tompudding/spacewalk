@@ -155,6 +155,7 @@ class FloatingFireExtinguisher(DynamicBox):
         self.parent = parent
         pos = Point(*self.parent.body.GetWorldPoint(fe.base_pos.to_vec()))/self.parent.physics.scale_factor
         direction = fe.GetDirection()
+        self.level = fe.level
         self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
         self.texture_coords = globals.atlas.TextureSpriteCoords(self.texture_name)
         self.half_size = self.subimage.size*0.5
@@ -185,7 +186,8 @@ class FireExtinguisher(object):
     texture_name = 'fire_extinguisher_held.png'
     min_angle = 1.5
     max_angle = (math.pi*2)-min_angle
-    def __init__(self,parent):
+    max_level = 1000
+    def __init__(self,parent,level = None):
         self.parent = parent
         self.subimage  = globals.atlas.SubimageSprite(self.texture_name)
         self.quad      = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords(self.texture_name))
@@ -194,7 +196,8 @@ class FireExtinguisher(object):
         self.middle    = self.bl + self.half_size
         self.shape     = self.parent.CreateShape(self.half_size,self.bl)
         self.shapeI    = self.parent.body.CreateShape(self.shape)
-        self.angle = 0
+        self.angle     = 0
+        self.level     = self.max_level if level == None else level
         self.SetPositions()
         self.squirting = False
 
@@ -221,8 +224,18 @@ class FireExtinguisher(object):
         #self.base_pos = self.bl + self.half_size*Point(0.3,0.05)
         #self.hose_pos = self.bl + self.half_size*Point(0.3,0.5)
 
+    def UpdateLevel(self,adjust):
+        if self.level <= 0:
+            return False
+        self.level += adjust
+        globals.game_view.mode.fe_level.SetBarLevel(float(self.level)/self.max_level)
+        return True
+
     def PhysUpdate(self):
         if self.squirting:
+            if not self.UpdateLevel(-1):
+                self.StopSquirting()
+                return
             thrust = -0.5
             vector = cmath.rect(thrust,self.GetDirection())
             self.parent.body.ApplyForce((vector.real,vector.imag),self.parent.body.GetWorldPoint(self.middle.to_vec()))
@@ -284,9 +297,9 @@ class Player(DynamicBox):
         self.arms      = [PlayerArm(self,(self,self.shoulders[0]),(self,self.resting_hand_positions[0])),
                           PlayerArm(self,(self,self.shoulders[1]),(self,self.resting_hand_positions[1]))]
 
-    def EquipFireExtinguisher(self):
+    def EquipFireExtinguisher(self,level = None):
         #Adding a new shape to ourselves
-        self.fire_extinguisher = FireExtinguisher(self)
+        self.fire_extinguisher = FireExtinguisher(self,level)
         self.current_hand_positions = (self.fire_extinguisher.base_pos,self.fire_extinguisher.hose_pos)
         self.arms[0].SetHand(self,self.fire_extinguisher.base_pos)
         self.arms[1].SetHand(self,self.fire_extinguisher.hose_pos)
@@ -435,7 +448,7 @@ class Player(DynamicBox):
             self.body.ApplyImpulse(impulse,self.body.position)
             obj.Destroy()
             
-            self.EquipFireExtinguisher()
+            self.EquipFireExtinguisher(obj.level)
             return
 
         if not (angle < self.grab_angle or (math.pi*2-angle) < self.grab_angle):
