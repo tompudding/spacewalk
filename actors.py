@@ -238,7 +238,7 @@ class Squirt(object):
         self.duration = duration
         self.start_time = globals.time
         self.end_time = self.start_time + duration
-        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords("debris.png"))
+        self.quad = drawing.Quad(globals.quad_buffer,tc = globals.atlas.TextureSpriteCoords("cloud.png"))
 
     def Update(self):
         if globals.time > self.end_time:
