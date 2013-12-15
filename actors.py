@@ -127,6 +127,33 @@ class DynamicBox(StaticBox):
         if self.health < 0:
             self.Destroy()
 
+class Debris(DynamicBox):
+    texture_name = 'debris.png'
+    def __init__(self,physics,bl,tr):
+        self.tc = globals.atlas.TextureSpriteCoords(self.texture_name)
+        super(Debris,self).__init__(physics,bl,tr,self.tc)
+
+class SaveBox(Debris):
+    texture_name = 'debris_save.png'
+
+    def __init__(self,physics,bl,tr,cb):
+        self.cb = cb
+        self.triggered = False
+        super(SaveBox,self).__init__(physics,bl,tr)
+
+    def PhysUpdate(self):
+        super(SaveBox,self).PhysUpdate()
+        if self.cb != None and self.triggered:
+            func = self.cb
+            self.cb = None
+            func()
+
+    def SaveAction(self):
+        print 'Saveaction!'
+        if self.cb != None and self.triggered == False:
+            #This gets called inside the world step, which means bad things. Defer action until later
+            self.triggered = True
+
 class PlayerArm(object):
     z_level = 11
     def __init__(self,parent,start,end):

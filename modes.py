@@ -86,6 +86,7 @@ class Titles(Mode):
 class LevelOne(Mode):
     shuttle_name = 'shuttle.png'
     debris_name  = 'debris.png'
+    save_name  = 'debris_save.png'
     def __init__(self,parent):
         self.parent = parent
         
@@ -114,7 +115,7 @@ class LevelOne(Mode):
         self.power_box.Disable()
         self.fe_level.Disable()
         self.help_box = ui.Box(globals.screen_root,
-                               pos = Point(0.7,0.75),
+                               pos = Point(0.6,0.75),
                                tr = Point(1,1),
                                colour = drawing.constants.colours.black)
         self.help_box.title = ui.TextBox(parent = self.help_box,
@@ -126,15 +127,17 @@ class LevelOne(Mode):
         self.help_box.help = []
         height = 0.1
         for i,(key,action) in enumerate((('left click','grab/push/spray'),
-                                         ('right click','cancel/detach/throw'),
+                                         ('left hold(while grabbed)','push'),
+                                         ('right click','cancel/detach'),
+                                         ('right hold(with item)','throw'),
                                          ('h','toggle help'),
                                          ('middle drag','move screen'),
                                          ('middle scroll','zoom'),
                                          ('space','reset'))):
             self.help_box.help.append(ui.TextBox(parent = self.help_box,
-                                                 bl = Point(-0.1,p),
+                                                 bl = Point(-0.2,p),
                                                  tr = Point(1.2,p+height),
-                                                 text = ('%15s %s' % (key,action)),
+                                                 text = ('%30s %s' % (key,action)),
                                                  scale = 3))
             p -= height
             
@@ -148,9 +151,13 @@ class LevelOne(Mode):
         #                                        bl = pos,
         #                                        tr = pos + obj.size,
         #                                        tc = parent.atlas.TextureSpriteCoords(name)))
-        self.ResetScene()
+        self.ResetSceneOne()
 
-    def ResetScene(self):
+    def ResetCurrentScene(self):
+        self.current_scene()
+
+    def ResetSceneOne(self):
+        self.current_scene = self.ResetSceneOne
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
@@ -160,15 +167,21 @@ class LevelOne(Mode):
         
         pos = self.parent.absolute.size*Point(0.48,0.48)
         obj = self.parent.atlas.SubimageSprite(self.debris_name)
-        self.items.append(actors.DynamicBox(self.parent.physics,
+        self.items.append(actors.Debris(self.parent.physics,
                                             bl = pos,
-                                            tr = pos + obj.size,
-                                            tc = self.parent.atlas.TextureSpriteCoords(self.debris_name)))
+                                            tr = pos + obj.size))
+
+        pos = self.parent.absolute.size*Point(0.48,0.55)
+        obj = self.parent.atlas.SubimageSprite(self.debris_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = self.ResetSceneTwo))
         self.parent.AddPlayer(Point(0.482,0.47))
         #work out where it can grab it
-        item = self.items[-1]
+        item = self.items[0]
         grab_pos = item.bl + (item.tr - item.bl)*Point(0.5,0.05)
-        self.parent.selected_player.Grab(self.items[-1],grab_pos)
+        self.parent.selected_player.Grab(item,grab_pos)
         #Start the whole thing spinning
         item.body.ApplyTorque(80)
         
@@ -176,6 +189,35 @@ class LevelOne(Mode):
         item.body.ApplyImpulse((-i,0),item.body.position)
         self.parent.selected_player.body.ApplyImpulse((i,0),self.parent.selected_player.body.position)
         #self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
+
+    def ResetSceneTwo(self):
+        self.current_scene = self.ResetSceneTwo
+        for player in self.parent.players:
+            player.Destroy()
+        for item in self.items:
+            item.Destroy()
+        self.items = []
+        self.parent.players = []
+
+        pos = self.parent.absolute.size*Point(0.48,0.55)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = None))
+        pos = self.parent.absolute.size*Point(0.78,0.89)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = self.ResetSceneThree))
+        self.parent.AddPlayer(Point(0.48,0.57))
+        self.parent.viewpos.pos = Point(687,1055)
+        
+        #self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
+
+    def ResetSceneThree(self):
+        pass
 
     def MouseMotion(self,pos,rel):
         if self.parent.selected_player:
@@ -195,12 +237,15 @@ class LevelOne(Mode):
         if key == pygame.K_TAB:
             self.parent.NextPlayer()
         elif key == pygame.K_SPACE:
-            self.ResetScene()
+            self.ResetCurrentScene()
         elif key == pygame.K_h:
             if self.help_box.enabled:
                 self.help_box.Disable()
             else:
                 self.help_box.Enable()
+        elif key == pygame.K_s:
+            if self.current_scene == self.ResetSceneOne:
+                self.ResetSceneTwo()
 
 class GameOver(Mode):
     blurb = "GAME OVER"

@@ -162,6 +162,11 @@ class MyContactFilter(box2d.b2ContactFilter):
         # Implements the default behavior of b2ContactFilter in Python
         if self.collide:
             return True
+        if isinstance(shape1.userData,actors.SaveBox):
+            shape1.userData.SaveAction()
+        elif isinstance(shape2.userData,actors.SaveBox):
+            shape2.userData.SaveAction()
+            
         if self.thrown:
             #Fire extinguisher doesn't collide with the player who threw it for a while
             if globals.time > self.thrown[1]:
@@ -264,7 +269,7 @@ class GameView(ui.RootElement):
         self.paused = False
         self.StartMusic()
         self.zoom = 1
-        self.viewpos = Viewpos(Point(660,800))
+        self.viewpos = Viewpos(Point(670,870))
         self.walls = [actors.StaticBox(self.physics,
                                        bl = Point(0,0),
                                        tr = Point(1,self.absolute.size.y)),
