@@ -151,7 +151,7 @@ class PlayerArm(object):
 
 class FloatingFireExtinguisher(DynamicBox):
     texture_name = 'fire_extinguisher_side.png'
-    def __init__(self,parent,fe):
+    def __init__(self,parent,fe,power):
         self.parent = parent
         pos = Point(*self.parent.body.GetWorldPoint(fe.base_pos.to_vec()))/self.parent.physics.scale_factor
         direction = fe.GetDirection()
@@ -165,7 +165,7 @@ class FloatingFireExtinguisher(DynamicBox):
         super(FloatingFireExtinguisher,self).__init__(self.parent.physics,self.bl,self.tr,self.texture_coords)
         #Add a force in the appropriate direction, as well as in the opposite direction on our player
         fe.SetPositions()
-        thrust = 20
+        thrust = power
         vector_fe = cmath.rect(thrust,direction)
         vector_guy = cmath.rect(-thrust,direction)
         bl_phys = fe.base_pos
@@ -245,6 +245,7 @@ class Player(DynamicBox):
     texture_name_fe       = 'astronaut_body_fe.png'
     selected_name         = 'selected.png'
     push_strength         = 200
+    throw_strength         = 100
     stretching_arm_length = 1.5
     resting_arm_length    = 0.9
     pushing_arm_length    = 0.8
@@ -347,10 +348,12 @@ class Player(DynamicBox):
         self.physics.contact_filter.thrown = (self,globals.time+1000)
         if not self.fire_extinguisher:
             return
+        power = ((globals.game_view.mode.power_box.power_level)**2)*self.throw_strength
+        globals.game_view.mode.power_box.Disable()
         self.fire_extinguisher.Destroy()
         #self.shape.filter.groupIndex = self.filter_group
         #print self.shape.filter.groupIndex
-        fe = FloatingFireExtinguisher(self,self.fire_extinguisher)
+        fe = FloatingFireExtinguisher(self,self.fire_extinguisher,power)
         #Need to have the fe and us not collide for a short while
         
         #self.unset = (fe,globals.time+5000)
@@ -379,6 +382,8 @@ class Player(DynamicBox):
         if self.fire_extinguisher:
             if button == globals.left_button:
                 self.fire_extinguisher.Squirt()
+            elif button == globals.right_button:
+                self.PrepareThrow()
         else:
             if button == globals.left_button and self.IsGrabbed():
                 self.PreparePush()
@@ -458,6 +463,11 @@ class Player(DynamicBox):
         for joint in self.joints:
             joint.length = self.pushing_arm_length
         #print 'prepare push'
+
+    def PrepareThrow(self):
+        globals.game_view.mode.power_box.Enable()
+        globals.game_view.mode.power_box.SetBarLevel(0)
+        self.push_start = globals.time
 
     def Push(self):
         power = ((globals.game_view.mode.power_box.power_level)**2)*self.push_strength
