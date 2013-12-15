@@ -243,9 +243,15 @@ class GameView(ui.RootElement):
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
         self.game_over = False
         self.dragging = None
+        self.backdrop_texture = drawing.texture.Texture('starfield.png')
         #pygame.mixer.music.load('music.ogg')
         #self.music_playing = False
         super(GameView,self).__init__(Point(0,0),Point(2000,2000))
+        tiles = (self.absolute.size.to_float())/self.backdrop_texture.size
+        self.backdrop  = drawing.Quad(globals.backdrop_buffer,tc = numpy.array([(0,0),(0,tiles.y),(tiles.x,tiles.y),(tiles.x,0)]))
+        self.backdrop.SetVertices(Point(0,0),
+                                  self.absolute.size,
+                                  drawing.constants.DrawLevels.grid)
         self.physics = Physics(self)
         #skip titles for development of the main game
         #self.mode = modes.Titles(self)
@@ -275,10 +281,10 @@ class GameView(ui.RootElement):
         #self.music_playing = True
 
     def Draw(self):
-        #drawing.DrawAll(globals.backdrop_buffer,self.atlas.texture.texture)
         drawing.ResetState()
         drawing.Scale(self.zoom,self.zoom,1)
         drawing.Translate(-self.viewpos.pos.x,-self.viewpos.pos.y,0)
+        drawing.DrawAll(globals.backdrop_buffer,self.backdrop_texture.texture)
         drawing.DrawAll(globals.quad_buffer,self.atlas.texture.texture)
         drawing.DrawAll(globals.nonstatic_text_buffer,globals.text_manager.atlas.texture.texture)
         
@@ -356,6 +362,10 @@ class GameView(ui.RootElement):
         screen_pos = self.viewpos.Get() + (pos/self.zoom)
         if button == 2:
             self.dragging = None
+        elif button == 4 and not self.dragging:
+            self.AdjustZoom(-0.5,pos)
+        elif button == 5 and not self.dragging:
+            self.AdjustZoom(+0.5,pos)
         else:
             self.mode.MouseButtonUp(screen_pos,button)
         return super(GameView,self).MouseButtonUp(pos,button)
@@ -369,6 +379,56 @@ class GameView(ui.RootElement):
             self.selected_player.Unselect()
             self.selected_player = self.players[(current_index + 1)%len(self.players)]
             self.selected_player.Select()
+
+    def AdjustZoom(self,amount,pos):
+        pos_coords = self.viewpos.Get() + (pos/self.zoom)
+        oldzoom = self.zoom
+        self.zoom -= (amount/10.0)
+        if self.zoom > 4:
+            self.zoom = 4
+        
+        #if we've zoomed so far out that we can see an edge of the screen, fix that
+        top_left= Point(0,globals.screen.y/self.zoom)
+        top_right = globals.screen/self.zoom
+        bottom_right = Point(globals.screen.x/self.zoom,0)
+
+        new_viewpos = self.viewpos.Get()
+        if new_viewpos.y < 0:
+            new_viewpos.y = 0
+
+        if new_viewpos.x < 0:
+            new_viewpos.x = 0
+        
+        #now the top left
+        new_top_right = new_viewpos+top_right
+        if new_top_right.y  > self.absolute.size.y:
+            new_viewpos.y -= (new_top_right.y - self.absolute.size.y)
+
+        if new_top_right.x > self.absolute.size.x:
+            new_viewpos.x -= (new_top_right.x - self.absolute.size.x)
+        
+        try:
+            if new_viewpos.y < 0:
+                raise ValueError
+
+            if new_viewpos.x < 0:
+                raise ValueError
+
+            #now the top left
+            new_top_right = new_viewpos+top_right
+            if new_top_right.y  > self.absolute.size.y:
+                raise ValueError
+
+            if new_top_right.x > self.absolute.size.x:
+                raise ValueError
+
+        except ValueError:
+            #abort! This is a bit shit but whatever
+            self.zoom = oldzoom
+            return
+
+        new_pos_coords = self.viewpos.Get() + pos/self.zoom
+        self.viewpos.Set(self.viewpos.Get() + (pos_coords - new_pos_coords))
 
     def ClampViewpos(self):
         if self.viewpos.pos.x < 0:

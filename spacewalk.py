@@ -14,6 +14,7 @@ def Init():
     globals.screen_root           = ui.UIRoot(Point(0,0),globals.screen)
     globals.quad_buffer           = drawing.QuadBuffer(131072)
     globals.ui_buffer             = drawing.QuadBuffer(131072)
+    globals.backdrop_buffer       = drawing.QuadBuffer(8)
     globals.nonstatic_text_buffer = drawing.QuadBuffer(131072)
     globals.colour_tiles          = drawing.QuadBuffer(131072)
     globals.mouse_relative_buffer = drawing.QuadBuffer(1024)

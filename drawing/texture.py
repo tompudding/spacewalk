@@ -28,6 +28,7 @@ class Texture(object):
 
             self.width  = self.textureSurface.get_width()
             self.height = self.textureSurface.get_height()
+            self.size = Point(self.width,self.height)
 
             self.texture = glGenTextures(1)
             cache[filename] = (self.texture,self.width,self.height)
