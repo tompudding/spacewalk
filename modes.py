@@ -274,7 +274,7 @@ class LevelOne(Mode):
         self.items.append(actors.SaveBox(self.parent.physics,
                                          bl = pos,
                                          tr = pos + obj.size,
-                                         cb = self.ResetSceneFour))
+                                         cb = self.ResetSceneThreePointFive))
         pos = self.parent.absolute.size*Point(0.412,0.665)
         obj = self.parent.atlas.SubimageSprite(self.save_name)
         self.items.append(actors.Debris(self.parent.physics,
@@ -289,12 +289,49 @@ class LevelOne(Mode):
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
 
-    def ResetSceneFour(self):
-        self.current_scene = self.ResetSceneFour
+    def ResetSceneThreePointFive(self):
+        self.current_scene = self.ResetSceneThreePointFive
         globals.sounds.spaceman.stop()
         if not self.played_sounds[3]:
-            globals.sounds.iss.play()
+            globals.sounds.makeit.play()
             self.played_sounds[3] = True
+        for player in self.parent.players:
+            player.Destroy()
+        for item in self.items:
+            item.Destroy()
+        for item in self.parent.floating_objects:
+            item.Destroy()
+        self.items = []
+        self.parent.players = []
+        pos = self.parent.absolute.size*Point(0.55,0.60)
+        obj = self.parent.atlas.SubimageSprite(self.save_name)
+        self.items.append(actors.SaveBox(self.parent.physics,
+                                         bl = pos,
+                                         tr = pos + obj.size,
+                                         cb = self.ResetSceneFour))
+
+
+
+        item = self.items[-1]
+        self.fe_level.Enable()
+        self.fe_level.SetBarLevel(0.0)
+        item.body.ApplyTorque(-15)
+        item.body.ApplyImpulse((0,0.1),item.body.position)
+
+        self.parent.AddPlayer(Point(0.44,0.65),True,angle=3*math.pi/2)
+        self.parent.AddPlayer(Point(0.43,0.60),angle=3*math.pi/2)
+        self.parent.players[0].body.ApplyImpulse((0.8,0.1),self.parent.players[0].body.position)
+        self.parent.players[-1].body.ApplyImpulse((1,0),self.parent.players[-1].body.position)
+        self.parent.viewpos.pos = Point(687,1100)
+        self.parent.zoom = 1
+
+
+    def ResetSceneFour(self):
+        self.current_scene = self.ResetSceneFour
+        globals.sounds.makeit.stop()
+        if not self.played_sounds[4]:
+            globals.sounds.iss.play()
+            self.played_sounds[4] = True
         for player in self.parent.players:
             player.Destroy()
         for item in self.items:
@@ -311,26 +348,29 @@ class LevelOne(Mode):
                                          tr = pos + obj.size*2,
                                          cb = self.ResetSceneFive,
                                          final = True))
-        pos = self.parent.absolute.size*Point(0.43,0.61)
-        obj = self.parent.atlas.SubimageSprite(self.save_name)
-        self.items.append(actors.FloatingFireExtinguisher(self.parent,
-                                                          fe = None,
-                                                          power = 1000,
-                                                          create_data = (pos,1000)))
-        item = self.items[-1]
+        #pos = self.parent.absolute.size*Point(0.43,0.61)
+        #obj = self.parent.atlas.SubimageSprite(self.save_name)
+        #self.items.append(actors.FloatingFireExtinguisher(self.parent,
+                                                          #fe = None,
+                                                          #power = 1000,
+                                                          #create_data = (pos,1000)))
+        #item = self.items[-1]
         self.fe_level.Enable()
         self.fe_level.SetBarLevel(0.0)
-        item.body.ApplyTorque(-15)
-        item.body.ApplyImpulse((0,0.1),item.body.position)
+        #item.body.ApplyTorque(-15)
+        #item.body.ApplyImpulse((0,0.1),item.body.position)
 
         self.parent.AddPlayer(Point(0.44,0.60),angle=math.pi/2)
         self.parent.AddPlayer(Point(0.43,0.60),angle=3*math.pi/2)
+        self.parent.players[0].body.ApplyImpulse((-0.1,0),self.parent.players[0].body.position)
+        self.parent.players[-1].body.ApplyImpulse((-0.1,0),self.parent.players[-1].body.position)
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
         
 
     def ResetSceneFive(self):
         print 'Gameover!'
+        globals.sounds.noooo.play()
         globals.sounds.iss.stop()
         self.help_box.Disable()
         globals.game_view.mode = GameOver(self.parent)
@@ -366,6 +406,8 @@ class LevelOne(Mode):
             elif self.current_scene == self.ResetSceneTwo:
                 self.ResetSceneThree()
             elif self.current_scene == self.ResetSceneThree:
+                self.ResetSceneThreePointFive()
+            elif self.current_scene == self.ResetSceneThreePointFive:
                 self.ResetSceneFour()
             elif self.current_scene == self.ResetSceneFour:
                 self.ResetSceneFive()
