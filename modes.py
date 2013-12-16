@@ -127,7 +127,7 @@ class LevelOne(Mode):
                                          scale = 4)
         
         self.help_box = ui.Box(globals.screen_root,
-                               pos = Point(0.6,0.75),
+                               pos = Point(0.6,0.6),
                                tr = Point(1,1),
                                colour = drawing.constants.colours.black)
         self.help_box.title = ui.TextBox(parent = self.help_box,
@@ -137,7 +137,7 @@ class LevelOne(Mode):
                                          scale = 4)
         p = 0.7
         self.help_box.help = []
-        height = 0.1
+        height = 0.08
         for i,(key,action) in enumerate((('left click','grab/push/spray'),
                                          ('left hold(while grabbed)','push'),
                                          ('right click','cancel/detach'),
@@ -146,7 +146,8 @@ class LevelOne(Mode):
                                          ('middle drag','move screen'),
                                          ('middle scroll','zoom'),
                                          ('space','reset'),
-                                         ('tab','switch players'))):
+                                         ('tab','switch players'),
+                                         ('DEL','toggle music'))):
             self.help_box.help.append(ui.TextBox(parent = self.help_box,
                                                  bl = Point(-0.2,p),
                                                  tr = Point(1.2,p+height),
