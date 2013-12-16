@@ -116,6 +116,16 @@ class LevelOne(Mode):
                                          scale  = 3)
         self.power_box.Disable()
         self.fe_level.Disable()
+        self.extra_help_box = ui.Box(globals.screen_root,
+                                    pos = Point(0.35,0.0),
+                                    tr = Point(0.65,0.04),
+                                    colour = drawing.constants.colours.black)
+        self.extra_help_box.text = ui.TextBox(parent = self.extra_help_box,
+                                         bl = Point(0,0),
+                                         tr = Point(1,1),
+                                         text ='Press SPACE to reset',
+                                         scale = 4)
+        
         self.help_box = ui.Box(globals.screen_root,
                                pos = Point(0.6,0.75),
                                tr = Point(1,1),

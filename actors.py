@@ -61,11 +61,10 @@ class StaticBox(object):
             return
         if self.parent_joint:
             #We're attached, so get rid of that before killing us
-            self.parent_joint.UnGrapple()
+            self.parent_joint.Ungrab()
             self.parent_joint = None
         self.shape.ClearUserData()
         self.physics.world.DestroyBody(self.body)
-        print 'destroyed body',self
         self.dead = True
         self.quad.Delete()
 
@@ -162,7 +161,6 @@ class SaveBox(Debris):
                 func()
 
     def SaveAction(self,player):
-        print 'Saveaction!'
         if self.cb != None and self.triggered == False:
             #This gets called inside the world step, which means bad things. Defer action until later
             self.players_to_remove.append(player)
@@ -225,7 +223,6 @@ class FloatingFireExtinguisher(DynamicBox):
             vector_guy = cmath.rect(-thrust,direction)
             bl_phys = fe.base_pos
             bl_world = self.parent.body.GetWorldPoint(bl_phys.to_vec())
-            print vector_guy.real,vector_guy.imag,bl_world,self.parent.body.position
             self.parent.body.ApplyForce((vector_guy.real,vector_guy.imag),bl_world)
             self.body.SetLinearVelocity(self.parent.body.GetLinearVelocity())
             #Now let's apply the impulse to counteract that velocity we've just imparted
@@ -245,7 +242,6 @@ class Squirt(object):
 
     def Update(self):
         if globals.time > self.end_time:
-            print 'killing squirter'
             self.quad.Delete()
             return False
         partial = float(globals.time-self.start_time)/self.duration
@@ -290,12 +286,10 @@ class FireExtinguisher(object):
 
     def Squirt(self):
         self.squirting = True
-        print 'squirting'
         globals.sounds.psh.play()
 
     def StopSquirting(self):
         self.squirting = False
-        print 'stopped squirting'
         globals.sounds.psh.stop()
 
     def SetPositions(self):
@@ -354,12 +348,12 @@ class FireExtinguisher(object):
         self.angle = angle%(math.pi*2)
         #if self.angle > self.min_angle and self.angle < self.max_angle:
         #    return 
-        #print 'self.angle',self.angle
         self.shape.SetAsBox(self.half_size[0],self.half_size[1],self.bl.to_vec(),self.angle)
         self.SetPositions()
 
     def Destroy(self):
         if not self.dead:
+            self.StopSquirting()
             for squirter in self.squirters:
                 squirter.Destroy()
             self.shape.ClearUserData()
@@ -443,7 +437,6 @@ class Player(DynamicBox):
             self.fire_extinguisher.PhysUpdate()
 
     def ResetFilters(self):
-        #print 'resetting filters'
         #self.unset[0].shape.filter.groupIndex = 0
         #self.shape.filter.groupIndex = 0
         #self.unset = None
@@ -539,7 +532,6 @@ class Player(DynamicBox):
         phys_pos = pos*self.physics.scale_factor
         centre = self.body.position
         diff = phys_pos - Point(centre[0],centre[1])
-        print 'jim',diff.SquareLength()
         if diff.SquareLength() > self.stretching_arm_length:
             #Maybe waggle arms here?
             return
@@ -548,7 +540,6 @@ class Player(DynamicBox):
         globals.sounds.grab.play()
         #You can catch a fire extinguisher from any angle
         if isinstance(obj,FloatingFireExtinguisher):
-            print 'caught it!'
             #Need to add an impulse to this badger
             vel = obj.body.GetLinearVelocity()
             mass = obj.body.GetMass()
@@ -571,10 +562,11 @@ class Player(DynamicBox):
             joint.length = self.resting_arm_length
             self.joints.append(self.physics.world.CreateJoint(joint))
         self.other_obj = obj
+        if isinstance(obj,Player):
+            obj.parent_joint = self
         other_local_pos = Point(*obj.body.GetLocalPoint(phys_pos.to_vec()))
         self.arms[0].SetHand(obj,other_local_pos)
         self.arms[1].SetHand(obj,other_local_pos)
-        #print self,'grappled'
 
     def IsGrabbed(self):
         return len(self.joints) != 0
@@ -590,7 +582,6 @@ class Player(DynamicBox):
         self.other_obj = None
         for i in 0,1:
             self.arms[i].SetHand(self,self.current_hand_positions[i])
-        #print 'ungrapple'
 
     def PreparePush(self):
         if not self.IsGrabbed():
@@ -609,7 +600,6 @@ class Player(DynamicBox):
 
     def Push(self):
         power = ((globals.game_view.mode.power_box.power_level)**2)*self.push_strength
-        print globals.game_view.mode.power_box.power_level,power
         globals.game_view.mode.power_box.Disable()
         
         self.push_start = None
@@ -617,7 +607,6 @@ class Player(DynamicBox):
             return
         obj = self.other_obj
         self.Ungrab()
-        print 'pushing'
         #Push on another object. Equal and opposite forces and what not
         #Fire a ray from my player to the object. Where it meets is where the force should be applied
         centre = self.body.GetWorldPoint([0,self.midpoint[1]*1.01])
@@ -644,7 +633,6 @@ class Player(DynamicBox):
             normal = normal.to_vec()
 
         #self.physics.contact_filter.pushed = (self,obj,globals.time+500)
-        print power
         self.body.ApplyForce(normal*power,centre)
         intersection_point = self.body.GetWorldPoint((front-centre)*lam)
         shape.userData.body.ApplyForce(-normal*power,intersection_point) 
@@ -652,7 +640,6 @@ class Player(DynamicBox):
 
 
     def Destroy(self):
-        print 'player destroy!',self.dead
         if self.dead:
             return
         if self.fire_extinguisher:

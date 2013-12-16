@@ -27,7 +27,6 @@ class Viewpos(object):
 
     def Set(self,point):
         self.pos = point
-        print self.pos
         #self.NoTarget()
 
     def SetTarget(self,point,t,rate=2,callback = None):
@@ -419,7 +418,6 @@ class GameView(ui.RootElement):
             self.zoom = self.min_zoom
         if self.zoom > self.max_zoom:
             self.zoom = self.max_zoom
-        print self.zoom
         
         #if we've zoomed so far out that we can see an edge of the screen, fix that
         top_left= Point(0,globals.screen.y/self.zoom)
@@ -440,7 +438,6 @@ class GameView(ui.RootElement):
 
         if new_top_right.x > self.absolute.size.x:
             new_viewpos.x -= (new_top_right.x - self.absolute.size.x)
-        print 'a',new_viewpos
         
         try:
             if new_viewpos.y < 0:
