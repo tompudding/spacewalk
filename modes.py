@@ -365,6 +365,9 @@ class GameOver(Mode):
         self.parent          = parent
         self.blurb           = self.blurb
         self.blurb_text      = None
+        pygame.mixer.music.load('end_music.ogg')
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.6)
         self.handlers        = {TitleStages.TEXT    : self.TextDraw,
                                 TitleStages.SCROLL  : self.Wait,
                                 TitleStages.WAIT    : self.Wait}

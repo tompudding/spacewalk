@@ -253,6 +253,7 @@ class Physics(object):
         return None
 
 class GameView(ui.RootElement):
+    music_volume = 0.3
     def __init__(self):
         self.selected_player = None
         self.floating_objects = []
@@ -262,8 +263,9 @@ class GameView(ui.RootElement):
         self.max_zoom = 2.0
         self.min_zoom = 0.5
         self.backdrop_texture = drawing.texture.Texture('starfield.png')
-        #pygame.mixer.music.load('music.ogg')
-        #self.music_playing = False
+        pygame.mixer.music.load('music.ogg')
+        pygame.mixer.music.set_volume(self.music_volume)
+        self.music_playing = True
         super(GameView,self).__init__(Point(0,0),Point(2000,2000))
         tiles = (self.absolute.size.to_float())/self.backdrop_texture.size
         self.backdrop  = drawing.Quad(globals.backdrop_buffer,tc = numpy.array([(0,0),(0,tiles.y),(tiles.x,tiles.y),(tiles.x,0)]))
@@ -294,9 +296,8 @@ class GameView(ui.RootElement):
                       ]
 
     def StartMusic(self):
-        pass
-        #pygame.mixer.music.play(-1)
-        #self.music_playing = True
+        pygame.mixer.music.play(-1)
+        self.music_playing = True
 
     def Draw(self):
         #drawing.ResetState()
@@ -338,7 +339,7 @@ class GameView(ui.RootElement):
                 pygame.mixer.music.set_volume(0)
             else:
                 self.music_playing = True
-                pygame.mixer.music.set_volume(1)
+                pygame.mixer.music.set_volume(self.music_volume)
         self.mode.KeyUp(key)
 
     def AddPlayer(self,pos,fire_extinguisher = False,angle=0):
