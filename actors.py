@@ -314,6 +314,9 @@ class FireExtinguisher(object):
         globals.game_view.mode.fe_level.SetBarLevel(float(self.level)/self.max_level)
         return True
 
+    def Empty(self):
+        self.UpdateLevel(-self.level)
+
     def PhysUpdate(self):
         if self.dead:
             return

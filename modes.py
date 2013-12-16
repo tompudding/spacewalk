@@ -310,16 +310,15 @@ class LevelOne(Mode):
                                          tr = pos + obj.size,
                                          cb = self.ResetSceneFour))
 
-
-
         item = self.items[-1]
-        self.fe_level.Enable()
-        self.fe_level.SetBarLevel(0.0)
         item.body.ApplyTorque(-15)
         item.body.ApplyImpulse((0,0.1),item.body.position)
 
         self.parent.AddPlayer(Point(0.44,0.65),True,angle=3*math.pi/2)
         self.parent.AddPlayer(Point(0.43,0.60),angle=3*math.pi/2)
+        self.fe_level.Enable()
+        self.fe_level.SetBarLevel(0.0)
+        self.parent.players[0].fire_extinguisher.Empty()
         self.parent.players[0].body.ApplyImpulse((0.8,0.1),self.parent.players[0].body.position)
         self.parent.players[-1].body.ApplyImpulse((1,0),self.parent.players[-1].body.position)
         self.parent.viewpos.pos = Point(687,1100)
@@ -400,17 +399,17 @@ class LevelOne(Mode):
                 self.help_box.Disable()
             else:
                 self.help_box.Enable()
-        elif key == pygame.K_s:
-            if self.current_scene == self.ResetSceneOne:
-                self.ResetSceneTwo()
-            elif self.current_scene == self.ResetSceneTwo:
-                self.ResetSceneThree()
-            elif self.current_scene == self.ResetSceneThree:
-                self.ResetSceneThreePointFive()
-            elif self.current_scene == self.ResetSceneThreePointFive:
-                self.ResetSceneFour()
-            elif self.current_scene == self.ResetSceneFour:
-                self.ResetSceneFive()
+        # elif key == pygame.K_s:
+        #     if self.current_scene == self.ResetSceneOne:
+        #         self.ResetSceneTwo()
+        #     elif self.current_scene == self.ResetSceneTwo:
+        #         self.ResetSceneThree()
+        #     elif self.current_scene == self.ResetSceneThree:
+        #         self.ResetSceneThreePointFive()
+        #     elif self.current_scene == self.ResetSceneThreePointFive:
+        #         self.ResetSceneFour()
+        #     elif self.current_scene == self.ResetSceneFour:
+        #         self.ResetSceneFive()
 
 class GameOver(Mode):
     blurb = "You made it to the ISS and back down to Earth, the sole survivor of the mysterious space calamity thing. Dr. Spaceman will be remembered.                                               Thanks for playing!"
