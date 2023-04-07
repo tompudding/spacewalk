@@ -54,7 +54,7 @@ class Viewpos(object):
         self.follow_locked = False
 
     def HasTarget(self):
-        return self.target != None
+        return self.target is not None
 
     def Get(self):
         return self.pos
@@ -94,7 +94,7 @@ class Viewpos(object):
                         newdiff = target - self.pos
                     else:
                         self.pos += diff*0.02
-                
+
         elif self.target:
             if t >= self.target_time:
                 self.pos = self.target
@@ -124,8 +124,8 @@ class fwContactPoint:
 
 class MyContactListener(box2d.b2ContactListener):
     physics = None
-    def __init__(self): 
-        super(MyContactListener, self).__init__() 
+    def __init__(self):
+        super(MyContactListener, self).__init__()
     def Add(self, point):
         """Handle add point"""
         if not self.physics:
@@ -138,7 +138,7 @@ class MyContactListener(box2d.b2ContactListener):
         cp.id       = point.id
         #globals.sounds.thud.play()
         self.physics.contacts.append(cp)
-        
+
     def Persist(self, point):
         """Handle persist point"""
 
@@ -174,7 +174,7 @@ class MyContactFilter(box2d.b2ContactFilter):
                 obj = obj.parent
             if isinstance(obj,actors.Player):
                 shape2.userData.SaveAction(obj)
-            
+
         if self.thrown:
             #Fire extinguisher doesn't collide with the player who threw it for a while
             if globals.time > self.thrown[1]:
@@ -200,7 +200,7 @@ class MyContactFilter(box2d.b2ContactFilter):
         #print filter1.groupIndex,filter2.groupIndex
         if filter1.groupIndex == filter2.groupIndex and filter1.groupIndex != 0:
             return filter1.groupIndex > 0
- 
+
         collides = (filter1.maskBits & filter2.categoryBits) != 0 and (filter1.categoryBits & filter2.maskBits) != 0
         return collides
 
@@ -220,19 +220,22 @@ class Physics(object):
         self.world = box2d.b2World(self.worldAABB, self.gravity, self.doSleep)
         self.world.SetContactListener(self.contact_listener)
         self.world.SetContactFilter(self.contact_filter)
+        #self.world = box2d.b2World(self.gravity, self.doSleep, aabb=self.worldAABB, contactListener=self.contact_listener, contactFilter=self.contact_filter)
+        #self.world.SetContactListener(self.contact_listener)
+        #self.world.SetContactFilter(self.contact_filter)
         self.timeStep = 1.0 / 60.0
         self.velocityIterations = 10
         self.positionIterations = 8
         self.max_zoom = 2.0
         self.objects = []
-    
+
     def AddObject(self,obj):
         self.objects.append(obj)
 
     def Step(self):
         self.contacts = []
         self.world.Step(self.timeStep, self.velocityIterations, self.positionIterations)
-        
+
         for obj in self.objects:
             obj.PhysUpdate()
 
@@ -262,7 +265,7 @@ class GameView(ui.RootElement):
         self.max_zoom = 2.0
         self.min_zoom = 0.5
         self.backdrop_texture = drawing.texture.Texture('starfield.png')
-        pygame.mixer.music.load('music.ogg')
+        pygame.mixer.music.load(globals.pyinst.path('music.ogg'))
         pygame.mixer.music.set_volume(self.music_volume)
         self.music_playing = True
         super(GameView,self).__init__(Point(0,0),Point(2000,2000))
@@ -281,16 +284,16 @@ class GameView(ui.RootElement):
         self.zoom = 1
         self.viewpos = Viewpos(Point(670,870))
         self.walls = [actors.StaticBox(self.physics,
-                                       bl = Point(0,0),
+                                       bl = Point(-10,-10),
                                        tr = Point(1,self.absolute.size.y)),
                       actors.StaticBox(self.physics,
-                                       bl = Point(self.absolute.size.x,0),
-                                       tr = Point(self.absolute.size.x+1,self.absolute.size.y)),
+                                       bl = Point(self.absolute.size.x,-10),
+                                       tr = Point(self.absolute.size.x+10,self.absolute.size.y)),
                       actors.StaticBox(self.physics,
-                                       bl = Point(0,self.absolute.size.y),
-                                       tr = Point(self.absolute.size.x,self.absolute.size.y+1)),
+                                       bl = Point(-10,self.absolute.size.y),
+                                       tr = Point(self.absolute.size.x,self.absolute.size.y+10)),
                       actors.StaticBox(self.physics,
-                                       bl = Point(0,0),
+                                       bl = Point(-10,-10),
                                        tr = Point(self.absolute.size.x,1)),
                       ]
 
@@ -309,7 +312,7 @@ class GameView(ui.RootElement):
         drawing.DrawAll(globals.backdrop_buffer,self.backdrop_texture.texture)
         drawing.DrawAll(globals.quad_buffer,self.atlas.texture.texture)
         drawing.DrawAll(globals.nonstatic_text_buffer,globals.text_manager.atlas.texture.texture)
-        
+
     def Update(self,t):
         if self.mode:
             self.mode.Update(t)
@@ -321,13 +324,13 @@ class GameView(ui.RootElement):
 
         if not self.paused:
             self.physics.Step()
-            
+
         self.t = t
 
     def GameOver(self):
         self.game_over = True
         self.mode = modes.GameOver(self)
-        
+
     def KeyDown(self,key):
         self.mode.KeyDown(key)
 
@@ -365,7 +368,7 @@ class GameView(ui.RootElement):
 
     def MouseMotion(self,pos,rel,handled):
         #print 'mouse',pos
-        #if self.selected_player != None:
+        #if self.selected_player is not None:
         #    self.selected_player.MouseMotion()
         screen_pos = self.viewpos.Get() + (pos/self.zoom)
         screen_rel = rel/self.zoom
@@ -401,7 +404,7 @@ class GameView(ui.RootElement):
         return super(GameView,self).MouseButtonUp(pos,button)
 
     def NextPlayer(self):
-        if self.selected_player == None:
+        if self.selected_player is None:
             if len(self.players) != 0:
                 self.selected_player = self.players[0]
         else:
@@ -418,7 +421,7 @@ class GameView(ui.RootElement):
             self.zoom = self.min_zoom
         if self.zoom > self.max_zoom:
             self.zoom = self.max_zoom
-        
+
         #if we've zoomed so far out that we can see an edge of the screen, fix that
         top_left= Point(0,globals.screen.y/self.zoom)
         top_right = globals.screen/self.zoom
@@ -430,7 +433,7 @@ class GameView(ui.RootElement):
 
         if new_viewpos.x < 0:
             new_viewpos.x = 0
-        
+
         #now the top left
         new_top_right = new_viewpos+top_right
         if new_top_right.y  > self.absolute.size.y:
@@ -438,7 +441,7 @@ class GameView(ui.RootElement):
 
         if new_top_right.x > self.absolute.size.x:
             new_viewpos.x -= (new_top_right.x - self.absolute.size.x)
-        
+
         try:
             if new_viewpos.y < 0:
                 raise ValueError

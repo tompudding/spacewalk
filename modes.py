@@ -19,10 +19,10 @@ class Mode(object):
     """ Abstract base class to represent game modes """
     def __init__(self,parent):
         self.parent = parent
-    
+
     def KeyDown(self,key):
         pass
-    
+
     def KeyUp(self,key):
         pass
 
@@ -71,7 +71,7 @@ class Titles(Mode):
     def KeyDown(self,key):
         self.stage = TitleStages.COMPLETE
 
-    def Update(self,t):        
+    def Update(self,t):
         self.elapsed = t - self.start
         self.stage = self.handlers[self.stage](t)
 
@@ -90,9 +90,10 @@ class LevelOne(Mode):
     iss_name = 'shuttle.png'
     def __init__(self,parent):
         self.parent = parent
-        
+
         self.items = []
         self.played_sounds = [False]*10
+
         self.power_box = ui.PowerBar(globals.screen_root,
                                      pos = Point(0.45,0.05),
                                      tr = Point(0.55,0.1),
@@ -125,7 +126,7 @@ class LevelOne(Mode):
                                          tr = Point(1,1),
                                          text ='Press SPACE to reset',
                                          scale = 4)
-        
+
         self.help_box = ui.Box(globals.screen_root,
                                pos = Point(0.6,0.6),
                                tr = Point(1,1),
@@ -154,7 +155,7 @@ class LevelOne(Mode):
                                                  text = ('%30s %s' % (key,action)),
                                                  scale = 3))
             p -= height
-            
+
         self.help_box.Enable()
         #for name,pos in ((self.shuttle_name,globals.screen*2),
                          #(self.debris_name,globals.screen*Point(0.3,0.3)),
@@ -181,7 +182,7 @@ class LevelOne(Mode):
             item.Destroy()
         self.items = []
         self.parent.players = []
-        
+
         pos = self.parent.absolute.size*Point(0.48,0.48)
         obj = self.parent.atlas.SubimageSprite(self.debris_name)
         self.items.append(actors.Debris(self.parent.physics,
@@ -201,7 +202,7 @@ class LevelOne(Mode):
         self.parent.selected_player.Grab(item,grab_pos)
         #Start the whole thing spinning
         item.body.ApplyTorque(80)
-        
+
         i = 2
         item.body.ApplyImpulse((-i,0),item.body.position)
         self.parent.selected_player.body.ApplyImpulse((i,0),self.parent.selected_player.body.position)
@@ -244,7 +245,7 @@ class LevelOne(Mode):
         self.parent.AddPlayer(Point(0.48,0.57),angle=math.pi)
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
-        
+
         #self.parent.AddPlayer(Point(0.60,0.25)*(globals.screen.to_float()/self.parent.absolute.size))
 
     def ResetSceneThree(self):
@@ -365,7 +366,7 @@ class LevelOne(Mode):
         self.parent.players[-1].body.ApplyImpulse((-0.1,0),self.parent.players[-1].body.position)
         self.parent.viewpos.pos = Point(687,1100)
         self.parent.zoom = 1
-        
+
 
     def ResetSceneFive(self):
         print 'Gameover!'
@@ -381,12 +382,12 @@ class LevelOne(Mode):
 
     def MouseButtonDown(self,pos,button):
         #print 'mouse button down',pos,button
-        if self.parent.selected_player != None:
+        if self.parent.selected_player is not None:
             self.parent.selected_player.MouseButtonDown(pos,button)
 
     def MouseButtonUp(self,pos,button):
         #print 'mouse button up',pos,button
-        if self.parent.selected_player != None:
+        if self.parent.selected_player is not None:
             self.parent.selected_player.MouseButtonUp(pos,button)
 
     def KeyUp(self,key):
@@ -399,17 +400,17 @@ class LevelOne(Mode):
                 self.help_box.Disable()
             else:
                 self.help_box.Enable()
-        # elif key == pygame.K_s:
-        #     if self.current_scene == self.ResetSceneOne:
-        #         self.ResetSceneTwo()
-        #     elif self.current_scene == self.ResetSceneTwo:
-        #         self.ResetSceneThree()
-        #     elif self.current_scene == self.ResetSceneThree:
-        #         self.ResetSceneThreePointFive()
-        #     elif self.current_scene == self.ResetSceneThreePointFive:
-        #         self.ResetSceneFour()
-        #     elif self.current_scene == self.ResetSceneFour:
-        #         self.ResetSceneFive()
+        elif key == pygame.K_s:
+            if self.current_scene == self.ResetSceneOne:
+                self.ResetSceneTwo()
+            elif self.current_scene == self.ResetSceneTwo:
+                self.ResetSceneThree()
+            elif self.current_scene == self.ResetSceneThree:
+                self.ResetSceneThreePointFive()
+            elif self.current_scene == self.ResetSceneThreePointFive:
+                self.ResetSceneFour()
+            elif self.current_scene == self.ResetSceneFour:
+                self.ResetSceneFive()
 
 class GameOver(Mode):
     blurb = "You made it to the ISS and back down to Earth, the sole survivor of the mysterious space calamity thing. Dr. Spaceman will be remembered.                                               Thanks for playing!"
@@ -417,7 +418,7 @@ class GameOver(Mode):
         self.parent          = parent
         self.blurb           = self.blurb
         self.blurb_text      = None
-        pygame.mixer.music.load('end_music.ogg')
+        pygame.mixer.music.load(globals.pyinst.path('end_music.ogg'))
         pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.6)
         self.handlers        = {TitleStages.TEXT    : self.TextDraw,
@@ -427,7 +428,7 @@ class GameOver(Mode):
                                       pos    = Point(0,0),
                                       tr     = Point(1,1),
                                       colour = (0,0,0,0.6))
-        
+
         bl = Point(0.3,0.5)
         tr = Point(0.7,0.7)
         self.blurb_text = ui.TextBox(parent = globals.screen_root,
@@ -448,7 +449,7 @@ class GameOver(Mode):
         #pygame.mixer.music.play(-1)
 
     def Update(self,t):
-        if self.start == None:
+        if self.start is None:
             self.start = t
         self.elapsed = t - self.start
         self.stage = self.handlers[self.stage](t)
